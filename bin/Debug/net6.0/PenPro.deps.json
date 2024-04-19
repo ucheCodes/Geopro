@@ -1,0 +1,91 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "PenPro/1.0.0": {
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.3",
+          "OxyPlot.Blazor": "2.5.9",
+          "DBreeze": "1.115.2023.1103"
+        },
+        "runtime": {
+          "PenPro.dll": {}
+        }
+      },
+      "DBreeze/1.115.2023.1103": {
+        "runtime": {
+          "lib/net6.0/DBreeze.dll": {
+            "assemblyVersion": "1.115.2023.1103",
+            "fileVersion": "1.115.2023.1103"
+          }
+        }
+      },
+      "Newtonsoft.Json/13.0.3": {
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.3.27908"
+          }
+        }
+      },
+      "OxyPlot.Blazor/2.5.9": {
+        "dependencies": {
+          "OxyPlot.Core": "2.1.2"
+        },
+        "runtime": {
+          "lib/net6.0/oxyplot.blazor.dll": {
+            "assemblyVersion": "2.5.9.0",
+            "fileVersion": "2.5.9.0"
+          }
+        }
+      },
+      "OxyPlot.Core/2.1.2": {
+        "runtime": {
+          "lib/netstandard2.0/OxyPlot.dll": {
+            "assemblyVersion": "2.1.2.0",
+            "fileVersion": "2.1.2.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "PenPro/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "DBreeze/1.115.2023.1103": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-5j0pO/2IW7wAEdMtOor7xeTZn8cqRezg1o+XrD91lILFrhMpSdcm1SG8dkXCvizNNAkRbpRz638/kEPaCEGKqA==",
+      "path": "dbreeze/1.115.2023.1103",
+      "hashPath": "dbreeze.1.115.2023.1103.nupkg.sha512"
+    },
+    "Newtonsoft.Json/13.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
+      "path": "newtonsoft.json/13.0.3",
+      "hashPath": "newtonsoft.json.13.0.3.nupkg.sha512"
+    },
+    "OxyPlot.Blazor/2.5.9": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6Aey1Zb1Dk8rOOzUbV8CazkNHbJlFirE4Pwh0bbKT2jR+2VuuyI3wgY0JSz6w4EevkkjWMdqhLpKDb2WMqm5Fw==",
+      "path": "oxyplot.blazor/2.5.9",
+      "hashPath": "oxyplot.blazor.2.5.9.nupkg.sha512"
+    },
+    "OxyPlot.Core/2.1.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/BuPL1Wa7ZhpKA2DBe72md+S8PgIHF+UP/NsKfO9BiheXnbns1/tqS7s2MWIR1xFy5i+PWVC67KziGPY48mNgA==",
+      "path": "oxyplot.core/2.1.2",
+      "hashPath": "oxyplot.core.2.1.2.nupkg.sha512"
+    }
+  }
+}

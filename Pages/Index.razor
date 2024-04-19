@@ -1,0 +1,53 @@
+﻿@page "/"
+<section class="container">  
+  <div class="menu">
+    <ul class="menu-items">
+      <li @onclick="(() => ToggleMenu(file))"><a class="@((activeMenu == file) ? "active" : "")" href="">File</a></li>
+      <li @onclick="(() => ToggleMenu(view))"><a class="@((activeMenu == view) ? "active" : "")" href="">View</a></li>
+      <li><a href="">Process</a></li>
+      <li><a href="">Run</a></li>
+    </ul>
+
+    <div class="icons">
+        <div>
+            <span class="@((activeMenu == file) ? "active" : "")">
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("Load a new *.csv data file", file))"  @onmouseout="HandleMouseOutIcon" class="fas fa-file-csv"></i>
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("append a new data to the existing data",file))" @onmouseout="HandleMouseOutIcon" class="fas fa-folder-open"></i>
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("Save your progress",file))" @onmouseout="HandleMouseOutIcon" class="fas fa-save"></i>
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("Clear all data",file))" @onmouseout="HandleMouseOutIcon" class="fas fa-trash"></i>
+            </span>
+            <span class="@((activeMenu == view) ? "active" : "")">
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("View raw / unfiltered data logs",view))" @onmouseout="HandleMouseOutIcon" class="fas fa-table"></i>
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("View filtered data logs",view))" @onmouseout="HandleMouseOutIcon" class="fas fa-server"></i>
+                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("View computed and processed data logs",view))" @onmouseout="HandleMouseOutIcon" class="fas fa-tv"></i>               
+            </span>
+        </div>
+        <label class="label">@iconMsg</label>
+    </div>
+  </div> 
+
+    <Chart/>
+</section>
+
+@code{
+    string iconMsg = "";
+    private string activeMenu = "file";
+    string file = "file";
+    string view = "view";
+
+    private void ToggleMenu(string itemClicked)
+    {
+        activeMenu = itemClicked;
+    }
+    private void HandleMouseOverIconsTooltip(string message, string menu)
+    {
+        if(activeMenu == menu)
+        {
+            iconMsg = message;
+        }
+    }
+    private void HandleMouseOutIcon()
+    {
+        iconMsg = "";
+    }
+}

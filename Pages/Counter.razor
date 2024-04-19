@@ -1,0 +1,30 @@
+﻿@page "/table"
+@if(isDataExist)
+{
+    <div class="dynamic-table">
+    <div class="table-header">
+        <h3 class="heading">CPT Raw Data</h3>
+        <bold>12,345 data points</bold>
+    </div>
+        <div class="table large">
+        <div class="table-body">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                        <tr>
+                            <td></td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+}
+
+@code{
+    bool isDataExist = false;
+}

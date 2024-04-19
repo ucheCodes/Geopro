@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "8ZjxctTDTc8IO6YDJ5uyxpTZDUUzVyp5Hbw89JitejQi5F5Pk/88MiZ19krheB8AC2Ug24gFvPvHrGVD1aXlDw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\user\\Codes\\PenPro\\PenPro.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\user\\.nuget\\packages\\dbreeze\\1.115.2023.1103\\dbreeze.1.115.2023.1103.nupkg.sha512",
+    "C:\\Users\\user\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
+    "C:\\Users\\user\\.nuget\\packages\\oxyplot.blazor\\2.5.9\\oxyplot.blazor.2.5.9.nupkg.sha512",
+    "C:\\Users\\user\\.nuget\\packages\\oxyplot.core\\2.1.2\\oxyplot.core.2.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}

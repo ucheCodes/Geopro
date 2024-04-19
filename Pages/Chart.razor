@@ -1,0 +1,109 @@
+﻿ <div class="content">
+     <div class="col-1">
+        <Counter/>
+    </div>
+    <div class="col-2">
+        <BlazorPlotView Model="@coneModel" Width="200" Height="565" />
+        <BlazorPlotView Model="@sleeveModel" Width="200" Height="565" />
+        <BlazorPlotView Model="@poreModel" Width="200" Height="565" />
+    </div>
+ </div>
+
+ @code{
+    private PlotModel coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
+    private PlotModel sleeveModel = new PlotModel { Title = "Sleeve Friction,kPa"};
+    private PlotModel poreModel = new PlotModel { Title = "Pore Pressure,kPa"};
+    private PlotModel stratModel = new PlotModel { };
+    LinearAxis coneXAxis = new LinearAxis();
+    LinearAxis coneYAxis = new LinearAxis();
+    LineSeries coneSeries = new LineSeries();
+    LinearAxis sleeveXAxis = new LinearAxis();
+    LinearAxis sleeveYAxis = new LinearAxis();
+    LineSeries sleeveSeries = new LineSeries();
+    LinearAxis poreXAxis = new LinearAxis();
+    LinearAxis poreYAxis = new LinearAxis();
+    LineSeries poreSeries = new LineSeries();
+    protected override void OnInitialized()
+    {
+        InitializePlotModels();
+    }
+    private void InitializePlotModels()
+    {
+         //Minimum = -5, Maximum = 20, //Minimum = 0, Maximum = 100,
+        /*Initializing cone model*/ 
+       coneXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       coneModel.Axes.Add(coneXAxis);
+       coneYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
+       coneModel.Axes.Add(coneYAxis);
+        coneSeries = new LineSeries
+        {
+            Title = "con res.",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColor.Parse("#00FF00")
+        };
+        coneModel.Series.Add(coneSeries);
+
+        /*Initializing sleeve model*/ 
+        sleeveXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+        sleeveModel.Axes.Add(sleeveXAxis);
+        sleeveYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
+        sleeveModel.Axes.Add(sleeveYAxis);
+        sleeveSeries = new LineSeries
+        {
+            Title = "con res.",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColor.Parse("#00FF00")
+        };
+        sleeveModel.Series.Add(sleeveSeries);
+
+        /*Initializing pore pressure model*/ 
+       poreXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       poreModel.Axes.Add(poreXAxis);
+       poreYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
+       poreModel.Axes.Add(poreYAxis);
+       poreSeries = new LineSeries
+        {
+            Title = "con res.",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColor.Parse("#00FF00")
+        };
+        poreModel.Series.Add(poreSeries);
+    }
+    /*
+    private void SetupDynamicPlotModel()
+    {
+        //You can always initialize xAxis and Yaxis minimum and maximum here.
+        dynamicSeries = new LineSeries
+        {
+            Title = "Series 2",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColor.Parse("#00FF00")
+        };
+        plotModel.Series.Add(dynamicSeries);
+       XAxis = new LinearAxis(){Position = AxisPosition.Bottom, StartPosition = 0, EndPosition = 1,Minimum = -60, Maximum = 60,   MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Distance (m)"};
+       plotModel.Axes.Add(XAxis);
+       YAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 0, EndPosition = 1, Minimum = 0, Maximum = 3000,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
+       plotModel.Axes.Add(YAxis);
+    }
+    private void DynamicPlot()
+    {
+        increment++;
+        int a = increment;
+        double y = Math.Pow(a,2) + 6 * a + 5;
+        dynamicSeries.Points.Add(new DataPoint(a,y));
+        UpdateDynamicPlots(a,y);
+    }
+        private void UpdateDynamicPlots(int a, double y)
+    {
+        if(a > 60)
+        {
+            XAxis.Maximum = a;
+        }
+        if(y > 3000)
+        {
+            YAxis.Maximum = y;
+        }
+        plotModel.InvalidatePlot(true);
+    }
+    */
+}

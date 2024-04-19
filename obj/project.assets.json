@@ -1,0 +1,266 @@
+{
+  "version": 3,
+  "targets": {
+    "net6.0": {
+      "DBreeze/1.115.2023.1103": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/DBreeze.dll": {
+            "related": ".XML"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/DBreeze.dll": {
+            "related": ".XML"
+          }
+        }
+      },
+      "Newtonsoft.Json/13.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Newtonsoft.Json.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "OxyPlot.Blazor/2.5.9": {
+        "type": "package",
+        "dependencies": {
+          "OxyPlot.Core": "2.1.2"
+        },
+        "compile": {
+          "lib/net6.0/oxyplot.blazor.dll": {}
+        },
+        "runtime": {
+          "lib/net6.0/oxyplot.blazor.dll": {}
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ],
+        "build": {
+          "buildTransitive/OxyPlot.Blazor.props": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/OxyPlot.Blazor.props": {}
+        }
+      },
+      "OxyPlot.Core/2.1.2": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/OxyPlot.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/OxyPlot.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "DBreeze/1.115.2023.1103": {
+      "sha512": "5j0pO/2IW7wAEdMtOor7xeTZn8cqRezg1o+XrD91lILFrhMpSdcm1SG8dkXCvizNNAkRbpRz638/kEPaCEGKqA==",
+      "type": "package",
+      "path": "dbreeze/1.115.2023.1103",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.txt",
+        "README.md",
+        "dbreeze.1.115.2023.1103.nupkg.sha512",
+        "dbreeze.nuspec",
+        "images/Dbreeze.Logo.png",
+        "lib/net35/DBreeze.XML",
+        "lib/net35/DBreeze.dll",
+        "lib/net40/DBreeze.XML",
+        "lib/net40/DBreeze.dll",
+        "lib/net45/DBreeze.XML",
+        "lib/net45/DBreeze.dll",
+        "lib/net461/DBreeze.XML",
+        "lib/net461/DBreeze.dll",
+        "lib/net462/DBreeze.XML",
+        "lib/net462/DBreeze.dll",
+        "lib/net47/DBreeze.XML",
+        "lib/net47/DBreeze.dll",
+        "lib/net472/DBreeze.XML",
+        "lib/net472/DBreeze.dll",
+        "lib/net6.0/DBreeze.XML",
+        "lib/net6.0/DBreeze.dll",
+        "lib/netcoreapp1.0/DBreeze.XML",
+        "lib/netcoreapp1.0/DBreeze.dll",
+        "lib/netcoreapp1.1/DBreeze.XML",
+        "lib/netcoreapp1.1/DBreeze.dll",
+        "lib/netcoreapp2.0/DBreeze.XML",
+        "lib/netcoreapp2.0/DBreeze.dll",
+        "lib/netcoreapp3.1/DBreeze.XML",
+        "lib/netcoreapp3.1/DBreeze.dll",
+        "lib/netstandard1.6/DBreeze.XML",
+        "lib/netstandard1.6/DBreeze.dll",
+        "lib/netstandard2.0/DBreeze.XML",
+        "lib/netstandard2.0/DBreeze.dll",
+        "lib/netstandard2.1/DBreeze.XML",
+        "lib/netstandard2.1/DBreeze.dll",
+        "lib/portable-net45+win8+wp8+wpa81/DBreeze.XML",
+        "lib/portable-net45+win8+wp8+wpa81/DBreeze.dll"
+      ]
+    },
+    "Newtonsoft.Json/13.0.3": {
+      "sha512": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ==",
+      "type": "package",
+      "path": "newtonsoft.json/13.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "README.md",
+        "lib/net20/Newtonsoft.Json.dll",
+        "lib/net20/Newtonsoft.Json.xml",
+        "lib/net35/Newtonsoft.Json.dll",
+        "lib/net35/Newtonsoft.Json.xml",
+        "lib/net40/Newtonsoft.Json.dll",
+        "lib/net40/Newtonsoft.Json.xml",
+        "lib/net45/Newtonsoft.Json.dll",
+        "lib/net45/Newtonsoft.Json.xml",
+        "lib/net6.0/Newtonsoft.Json.dll",
+        "lib/net6.0/Newtonsoft.Json.xml",
+        "lib/netstandard1.0/Newtonsoft.Json.dll",
+        "lib/netstandard1.0/Newtonsoft.Json.xml",
+        "lib/netstandard1.3/Newtonsoft.Json.dll",
+        "lib/netstandard1.3/Newtonsoft.Json.xml",
+        "lib/netstandard2.0/Newtonsoft.Json.dll",
+        "lib/netstandard2.0/Newtonsoft.Json.xml",
+        "newtonsoft.json.13.0.3.nupkg.sha512",
+        "newtonsoft.json.nuspec",
+        "packageIcon.png"
+      ]
+    },
+    "OxyPlot.Blazor/2.5.9": {
+      "sha512": "6Aey1Zb1Dk8rOOzUbV8CazkNHbJlFirE4Pwh0bbKT2jR+2VuuyI3wgY0JSz6w4EevkkjWMdqhLpKDb2WMqm5Fw==",
+      "type": "package",
+      "path": "oxyplot.blazor/2.5.9",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.MD",
+        "build/Microsoft.AspNetCore.StaticWebAssets.props",
+        "build/OxyPlot.Blazor.props",
+        "buildMultiTargeting/OxyPlot.Blazor.props",
+        "buildTransitive/OxyPlot.Blazor.props",
+        "demo.png",
+        "lib/net6.0/oxyplot.blazor.dll",
+        "lib/net7.0/oxyplot.blazor.dll",
+        "lib/net8.0/oxyplot.blazor.dll",
+        "oxyplot.blazor.2.5.9.nupkg.sha512",
+        "oxyplot.blazor.nuspec",
+        "staticwebassets/OxyPlot.Blazor.js"
+      ]
+    },
+    "OxyPlot.Core/2.1.2": {
+      "sha512": "/BuPL1Wa7ZhpKA2DBe72md+S8PgIHF+UP/NsKfO9BiheXnbns1/tqS7s2MWIR1xFy5i+PWVC67KziGPY48mNgA==",
+      "type": "package",
+      "path": "oxyplot.core/2.1.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "OxyPlot_128.png",
+        "lib/net40/OxyPlot.dll",
+        "lib/net40/OxyPlot.xml",
+        "lib/net45/OxyPlot.dll",
+        "lib/net45/OxyPlot.xml",
+        "lib/netstandard1.0/OxyPlot.dll",
+        "lib/netstandard1.0/OxyPlot.xml",
+        "lib/netstandard2.0/OxyPlot.dll",
+        "lib/netstandard2.0/OxyPlot.xml",
+        "oxyplot.core.2.1.2.nupkg.sha512",
+        "oxyplot.core.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net6.0": [
+      "Newtonsoft.Json >= 13.0.3",
+      "Oxyplot.blazor >= 2.5.9",
+      "dbreeze >= 1.115.2023.1103"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\user\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\user\\Codes\\PenPro\\PenPro.csproj",
+      "projectName": "PenPro",
+      "projectPath": "C:\\Users\\user\\Codes\\PenPro\\PenPro.csproj",
+      "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\user\\Codes\\PenPro\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net6.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      }
+    },
+    "frameworks": {
+      "net6.0": {
+        "targetAlias": "net6.0",
+        "dependencies": {
+          "Newtonsoft.Json": {
+            "target": "Package",
+            "version": "[13.0.3, )"
+          },
+          "Oxyplot.blazor": {
+            "target": "Package",
+            "version": "[2.5.9, )"
+          },
+          "dbreeze": {
+            "target": "Package",
+            "version": "[1.115.2023.1103, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.AspNetCore.App": {
+            "privateAssets": "none"
+          },
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.421\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
