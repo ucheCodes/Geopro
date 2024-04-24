@@ -1,44 +1,159 @@
 ﻿@page "/"
+@inject NavigationManager navigationManager
+@inject IJSRuntime jSRuntime
+
+<InputFile type="file" id="fileInput" style="display: none;"  OnChange="@HandleFileChange" accept=".csv,.txt"/>
 <section class="container">  
   <div class="menu">
     <ul class="menu-items">
-      <li @onclick="(() => ToggleMenu(file))"><a class="@((activeMenu == file) ? "active" : "")" href="">File</a></li>
-      <li @onclick="(() => ToggleMenu(view))"><a class="@((activeMenu == view) ? "active" : "")" href="">View</a></li>
-      <li><a href="">Process</a></li>
-      <li><a href="">Run</a></li>
+      <li @onclick="(() => ToggleMenu(file))"><i class="@((activeMenu == file) ? "active" : "")">New</i></li>
+      <li @onclick="(() => ToggleMenu(edit))"><i class="@((activeMenu == edit) ? "active" : "")">Edit</i></li>
+      <li @onclick="(() => ToggleMenu(process))"><i>Process</i></li>
+      <li @onclick="(() => ToggleMenu(view))"><i class="@((activeMenu == view) ? "active" : "")">View</i></li>
     </ul>
 
     <div class="icons">
         <div>
             <span class="@((activeMenu == file) ? "active" : "")">
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("Load a new *.csv data file", file))"  @onmouseout="HandleMouseOutIcon" class="fas fa-file-csv"></i>
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("append a new data to the existing data",file))" @onmouseout="HandleMouseOutIcon" class="fas fa-folder-open"></i>
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("Save your progress",file))" @onmouseout="HandleMouseOutIcon" class="fas fa-save"></i>
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("Clear all data",file))" @onmouseout="HandleMouseOutIcon" class="fas fa-trash"></i>
+                <i @onclick="(() => ShowFileDialog(true))" class="fas fa-file-csv"></i>
+                <i class="fas fa-save"></i>
+                <i @onclick="ClearAll"  class="fas fa-trash"></i>
+            </span>
+            <span class="@((activeMenu == edit) ? "active" : "")">
+                <i @onclick="(() => ShowFileDialog(false))"  class="fas fa-folder-open"></i>
+            </span>
+            <span class="@((activeMenu == process) ? "active" : "")">
+                <i @onclick="ViewRawData"  class="fas fa-table"></i>
+                <i @onclick="ViewFilteredData"  class="fas fa-server"></i>
+                <i class="fas fa-tv"></i>  @*@onclick="Test" *@             
             </span>
             <span class="@((activeMenu == view) ? "active" : "")">
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("View raw / unfiltered data logs",view))" @onmouseout="HandleMouseOutIcon" class="fas fa-table"></i>
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("View filtered data logs",view))" @onmouseout="HandleMouseOutIcon" class="fas fa-server"></i>
-                <i @onmouseover="@(e => HandleMouseOverIconsTooltip("View computed and processed data logs",view))" @onmouseout="HandleMouseOutIcon" class="fas fa-tv"></i>               
+                <i @onclick="(() => {showBigGraph = true;})" class="fas fa-chart-line"></i>
+                <i @onclick="(() => {showBigTable = true;})"  class="far fa-file-excel"></i>
             </span>
         </div>
-        <label class="label">@iconMsg</label>
+        <label class="label @msgClass">@iconMsg</label>
     </div>
   </div> 
+  <Chart @ref="chartRef" TableTiltle="@tableTitle"  dataArray=dataArray headerArray=headerArray headerIndexDict=headerIndexDict IsNewChart=IsNewChart  />
+  
+ <div class="graph @((showBigGraph) ? "active" : "")">
+    <span @onclick="(() => {showBigGraph = false;})" class="red x">X</span> 
+        <div>
+            <BigGraph isRender="showBigGraph" data2show="@data2show" dataArray="dataArray" headerIndexDict="headerIndexDict" filteredRawDataInColumnsDict="filteredRawDataInColumnsDict" filteredRawDataInRowsArray ="filteredRawDataInRowsArray"/>
+        </div>
+  </div> 
 
-    <Chart/>
+
+    <div class="big-table @((showBigTable) ? "active" : "")">
+        <span @onclick="(() => {showBigTable = false;})" class="red x">X</span> 
+            <BigTable  TableTiltle="@tableTitle" data2show="@data2show"   headerIndexDict="headerIndexDict" headerArray="headerArray"  dataArray="dataArray" filteredRawDataInRowsArray ="filteredRawDataInRowsArray" />   
+        </div>
 </section>
 
 @code{
+    public Chart? chartRef; //@onmouseover="@(e => HandleMouseOverIconsTooltip("Load a new *.csv data file", file))" 
+    bool IsNewChart = false;//data2show="@chartRef.data2show"
+    bool isDataLoaded = false;
+    bool isNewDataClicked = false;
+    bool showBigGraph = false;
+    bool showBigTable = false;
+    bool isFiltered = false;
     string iconMsg = "";
+    string msgClass = "black";
     private string activeMenu = "file";
     string file = "file";
+    string edit = "edit";
     string view = "view";
+    string process = "process";
+    string data2show = "";
+    string tableTitle = "";
 
+    string[]? lastDataArray;
+    List<string[]> headerArray = new List<string[]>();
+    List<string[]> dataArray = new List<string[]>();
+    List<double[]> filteredRawDataInRowsArray = new List<double[]>();
+    List<double> submergedDensityInCol = new List<double>();
+    List<string> soilNatureInCols = new();
+    Dictionary<int, List<double>> filteredRawDataInColumnsDict = new Dictionary<int, List<double>>();
+    Dictionary<int, string> headerIndexDict = new Dictionary<int, string> ();//index is key, result is value
+    Dictionary<int, string> headerUnitDict = new Dictionary<int, string>();//key is header inder, value is unit
     private void ToggleMenu(string itemClicked)
     {
         activeMenu = itemClicked;
     }
+    private void Test()
+    {
+        /*var filteredRawDataInRowsArray = FilterRawData(dataArray);
+        Console.WriteLine(filteredRawDataInRowsArray.Count);
+        foreach(var data in filteredRawDataInRowsArray)
+        {
+            foreach(var item in data)
+            {
+                Console.Write($" {item} ");
+            }
+            Console.WriteLine("");
+        } */
+        Console.WriteLine($" sub count : {submergedDensityInCol.Count}");
+        int i = 0;
+        foreach(var item in submergedDensityInCol)
+        {
+            Console.WriteLine($"{i} {item} {soilNatureInCols[i]}");
+            i++;
+        }
+    }
+    private void Test2()
+    {
+        var filteredRawDataInRowsArray = FilterRawData(dataArray);
+        Console.WriteLine(filteredRawDataInColumnsDict.Count());
+        foreach(var data in filteredRawDataInColumnsDict.Values)
+        {
+            foreach(var item in data)
+            {
+                Console.Write($" {item} ");
+            }
+            Console.WriteLine("");
+        } 
+    }
+    private void ViewRawData()
+    {
+       if(chartRef != null && dataArray.Count > 0)
+       {
+        data2show = "raw";
+        tableTitle = "CPT Raw Data";
+         chartRef.ViewRawData();
+       }
+        else
+       {
+            iconMsg = "No data imported ...Kindly, start a new project";
+            msgClass = "red";
+       }
+    }
+    private void ViewFilteredData()
+    {
+       if(chartRef != null && dataArray.Count > 0)
+       {
+            if(isFiltered == false)
+            {
+                filteredRawDataInRowsArray = new();
+                filteredRawDataInRowsArray = FilterRawData(dataArray);
+                chartRef.ViewFilteredData(filteredRawDataInRowsArray,filteredRawDataInColumnsDict);
+                data2show = "filtered";
+                tableTitle = "CPT Filtered Data";
+                isFiltered = true;
+            }
+            else
+            {
+                chartRef.ViewFilteredData(filteredRawDataInRowsArray,filteredRawDataInColumnsDict);
+            }
+       }
+       else
+       {
+            iconMsg = "No data imported for processing";
+            msgClass = "red";
+       }
+    }
+
     private void HandleMouseOverIconsTooltip(string message, string menu)
     {
         if(activeMenu == menu)
@@ -49,5 +164,219 @@
     private void HandleMouseOutIcon()
     {
         iconMsg = "";
+    }
+    private void ModifyDepthValuesAndAppend(string[] values)
+    {
+        try
+        {
+            if(lastDataArray != null)
+            {
+            string[] newValues = new string[values.Length];
+            var lastDepthValue = lastDataArray[0];
+            double parsedLastDepthValue;
+            double parsedItemDepthValue;
+            int index = 0;
+            foreach(var item in values)
+            {
+                if(index == 0)
+                {
+                    if(double.TryParse(lastDepthValue, out parsedLastDepthValue) && double.TryParse(item, out parsedItemDepthValue))
+                    {
+                        string computedDepth = (parsedLastDepthValue + parsedItemDepthValue).ToString(); 
+                        newValues[0] = computedDepth;
+                    }
+                    else{
+                        newValues[0] = "error";
+                    }
+                }
+                else
+                {
+                    newValues[index] = item;
+                }
+                index++;
+            }
+                dataArray.Add(newValues);
+            }
+        }
+        catch(Exception)
+        {
+
+        }
+    }
+    private List<double[]> FilterRawData(List<string[]> rawDataArray)
+    {
+        filteredRawDataInColumnsDict = new();//Just because I am modifying, create a new instance
+        submergedDensityInCol = new();
+        List<double[]> filteredDataArray = new List<double[]>();
+        int i = 0;
+        double positiveDepthValue = 0;
+        foreach(var dataArr in rawDataArray)
+        {
+            double index0; double index1;int j = 0;
+            double[] filteredRow = new double[dataArr.Length];
+            if(double.TryParse(dataArr[0], out index0) && double.TryParse(dataArr[1], out index1) && index0 >= 0 && index1 > 0)
+            {
+                foreach(var data in dataArr)
+                {
+                    double value;
+                    if(double.TryParse(data, out value))
+                    {
+                        if(i == 0 && j == 0)
+                        {
+                            positiveDepthValue = value;
+                            value = 0;
+                        } 
+                        else if(i > 0 && j == 0)
+                        {
+                            var newCalculatedDepth = value - positiveDepthValue;
+                            value = Math.Round(newCalculatedDepth, 2);
+                        }
+                        filteredRow[j] = value;
+                        PopulateRawDataIntoColumns(j, value);
+                        PopulateSubmergedDensityIntoColumns(j,value);
+                        j++;
+                    }
+                }
+                i++;
+                filteredDataArray.Add(filteredRow);
+            }
+        }
+        return filteredDataArray;
+    }
+    private void PopulateSubmergedDensityIntoColumns(int resistanceIndex, double resistanceValue)
+    {
+        if(resistanceIndex == 1 && resistanceValue > 1.0)//Mpa > 1.0 is typical of sand
+        {
+            submergedDensityInCol.Add(9.5);
+            soilNatureInCols.Add("granular");
+        }
+        else if(resistanceIndex == 1 && resistanceValue <= 1.0)
+        {
+            submergedDensityInCol.Add(6.5);
+            soilNatureInCols.Add("cohesive");
+        }
+    }
+    private void PopulateRawDataIntoColumns(int index, double value)
+    {
+        var listData = new List<double>();
+        if(headerIndexDict.ContainsKey(index))
+        {
+            if(filteredRawDataInColumnsDict.ContainsKey(index))
+            {
+                filteredRawDataInColumnsDict[index].Add(value);
+            }
+            else{
+                listData.Add(value);
+                filteredRawDataInColumnsDict.Add(index,listData);
+            }
+        }
+    }
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            using (var reader = new StreamReader(file.OpenReadStream()))
+            {
+                string? line = string.Empty;
+                int lineIndex = 0;
+                while (((line = await reader.ReadLineAsync()) != null!) && !string.IsNullOrWhiteSpace(line))
+                {
+                    string[] values = line.Split(',');
+                    if(lineIndex == 0 && isNewDataClicked)
+                    {
+                        headerArray.Add(values);
+                        PopulateHeaders(values);
+                    }
+                    else if(lineIndex == 1 && isNewDataClicked)
+                    {
+                        headerArray.Add(values);
+                        PopulateHeaderUnits(values);
+                    }
+                    else
+                    {
+                        if(isNewDataClicked)
+                        {
+                            dataArray.Add(values);
+                            isDataLoaded = true;
+                        }
+                        else if(!isNewDataClicked && lineIndex > 1){
+                            ModifyDepthValuesAndAppend(values);
+                        }
+                    }
+                    lineIndex++;
+                }
+                isFiltered = false;
+                //Console.WriteLine($"count of depth Array {dataArray.Count}");
+            }
+            ViewRawData();
+        }
+        catch (Exception ex)
+        {
+            msgClass = "red";
+            iconMsg = $"Error reading the file: " + ex.Message;
+        }
+    }
+
+    private void PopulateHeaders(string[] values)
+    {
+        int index = 0;
+        foreach (string value in values)
+        {
+            if(!string.IsNullOrWhiteSpace(value))
+            {
+                headerIndexDict.Add(index, value);
+            }
+            index++;
+        }
+    }
+    private void PopulateHeaderUnits(string[] values)
+    {
+        int index = 0;
+        foreach (string value in values)
+        {
+            if(!string.IsNullOrWhiteSpace(value) && headerIndexDict.ContainsKey(index))
+            {
+                headerUnitDict.Add(index,value);
+            }
+            index++;
+        }
+    }
+    private void ClearAll()
+    {
+        headerIndexDict = new();
+        headerUnitDict = new();
+        dataArray = new();
+        headerArray = new();
+        ClearChat();
+        iconMsg = "";
+        isDataLoaded = false;
+        isFiltered = false;
+    }
+    private void ClearChat()
+    {
+        if(chartRef != null)
+        {
+            chartRef.InitializePlotModels();
+        }
+    }
+    private async Task ShowFileDialog(bool isNewData)
+    {
+        await jSRuntime.InvokeVoidAsync("showFileDialog");
+        isNewDataClicked = isNewData;
+        if(isNewData)
+        {
+            ClearAll();
+            msgClass = "black";
+        }
+        else if(!isNewData && isDataLoaded)
+        {
+            lastDataArray = dataArray[dataArray.Count - 1];
+        }
+        else if(!isNewData && !isDataLoaded)
+        {
+            iconMsg = "Kindly click on New to start a new project";
+            msgClass = "red";
+        }
     }
 }

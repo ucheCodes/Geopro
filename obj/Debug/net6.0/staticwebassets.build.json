@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "Mivn5CxZ+9nk8NtGq0ya1CoCsPKeCFSL4ywjz/J1FJk=",
+  "Hash": "JnsQMsGhT1SFtMIiDIIM+Q6SIaEFcqdNoyoyooPeORc=",
   "Source": "PenPro",
   "BasePath": "_content/PenPro",
   "Mode": "Default",
@@ -304,6 +304,23 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\favicon.ico"
+    },
+    {
+      "Identity": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\js\\main.js",
+      "SourceId": "PenPro",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\",
+      "BasePath": "_content/PenPro",
+      "RelativePath": "js/main.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\main.js"
     }
   ]
 }

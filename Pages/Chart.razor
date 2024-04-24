@@ -1,7 +1,81 @@
 ﻿ <div class="content">
      <div class="col-1">
-        <Counter/>
+        @if(headerArray.Count > 0 && dataArray.Count > 0)
+        {
+            <div class="dynamic-table">
+                <div class="table-header">
+                    <h3 class="heading">@TableTiltle</h3>
+                    <bold>@dataCount data points</bold>
+                </div>
+                    <div class="table large">
+                    <div class="table-body">
+                        <table>
+                            <thead>
+                                @foreach(var row in headerArray)
+                                {
+                                    <tr>
+                                        @foreach(var data in row)
+                                        {
+                                            if(!string.IsNullOrWhiteSpace(data))
+                                            {
+                                                <th>@data</th>
+                                            }
+                                        }
+                                    </tr>
+                                }
+                            </thead>
+                            <tbody>
+                                @if(data2show == "raw")
+                                {
+                                    foreach(var row in dataArray)
+                                {
+                                    int index = 0;
+                                    <tr>
+                                        @foreach(var data in row)
+                                        {
+                                            string xDepth = row[0];
+                                            if(!string.IsNullOrWhiteSpace(data) && headerIndexDict.ContainsKey(index))// && ParseAndPopulateData(index, xDepth, data)
+                                            {
+                                                <td>@data</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="red">@data</td>
+                                            }
+                                            index++;
+                                        }
+                                    </tr>
+                                }
+                                }
+                                else if(data2show == "filtered")
+                                {
+                                    foreach(var row in filteredRawDataInRowsArray)
+                                    {
+                                        int index = 0;
+                                        <tr>
+                                            @foreach(var data in row)
+                                            {
+                                                if(headerIndexDict.ContainsKey(index))
+                                                {
+                                                    <td>@data</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="red">@data</td>
+                                                }
+                                                index++;
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }       
     </div>
+    
     <div class="col-2">
         <BlazorPlotView Model="@coneModel" Width="200" Height="565" />
         <BlazorPlotView Model="@sleeveModel" Width="200" Height="565" />
@@ -10,10 +84,22 @@
  </div>
 
  @code{
-    private PlotModel coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
-    private PlotModel sleeveModel = new PlotModel { Title = "Sleeve Friction,kPa"};
-    private PlotModel poreModel = new PlotModel { Title = "Pore Pressure,kPa"};
-    private PlotModel stratModel = new PlotModel { };
+    [Parameter]
+    public string TableTiltle {get;set;} = "";
+    [Parameter]
+    public List<string[]> dataArray {get; set;} = new();
+    [Parameter]
+    public List<string[]> headerArray {get; set;} = new();
+    [Parameter]
+    public bool IsNewChart {get; set;} = false;
+    [Parameter]
+    public Dictionary<int,string> headerIndexDict {get; set;} = new();
+    [Parameter]
+    public EventCallback<int> HandleClickEventCalls {get; set;}
+    Dictionary<int, List<double>> rawDataDict = new Dictionary<int, List<double>>();
+    public PlotModel coneModel = new PlotModel();
+    public PlotModel sleeveModel = new PlotModel();
+    public PlotModel poreModel = new PlotModel(); 
     LinearAxis coneXAxis = new LinearAxis();
     LinearAxis coneYAxis = new LinearAxis();
     LineSeries coneSeries = new LineSeries();
@@ -23,87 +109,177 @@
     LinearAxis poreXAxis = new LinearAxis();
     LinearAxis poreYAxis = new LinearAxis();
     LineSeries poreSeries = new LineSeries();
+    string data2show = "raw";
+    int dataCount = 0;
+    List<double[]> filteredRawDataInRowsArray = new List<double[]>();
     protected override void OnInitialized()
     {
         InitializePlotModels();
     }
-    private void InitializePlotModels()
+    protected override void OnAfterRender(bool firstRender)
     {
-         //Minimum = -5, Maximum = 20, //Minimum = 0, Maximum = 100,
-        /*Initializing cone model*/ 
-       coneXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
-       coneModel.Axes.Add(coneXAxis);
-       coneYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
-       coneModel.Axes.Add(coneYAxis);
-        coneSeries = new LineSeries
+    }
+
+    public void ViewRawData()
+    {
+        if(dataArray.Count > 0)
         {
-            Title = "con res.",
+            InitializePlotModels();
+            data2show = "raw";
+            dataCount = dataArray.Count;
+            foreach(var row in dataArray)
+            {
+                int index = 0;               
+                foreach(var item in row)
+                {
+                    string xDepth = row[0];
+                    double value = 0; double depth = 0;
+                    if(double.TryParse(xDepth, out depth) && double.TryParse(item, out value))
+                    {
+                        var x = value; var y = depth;
+                        if(index != 0 && headerIndexDict.ContainsKey(index))
+                        {
+                            if(index == 1)//tip resistance
+                            {
+                                coneSeries.Points.Add(new DataPoint(x,y));
+                            }
+                            else if(index == 2)
+                            {
+                                sleeveSeries.Points.Add(new DataPoint(x,y));
+                            }
+                            else if(index == 3)
+                            {
+                                poreSeries.Points.Add(new DataPoint(x,y));
+                            }
+                        }
+                    }
+                    index++;
+                }
+            }
+        }
+    }
+    public void ViewFilteredData(List<double[]> filteredRow, Dictionary<int, List<double>> filteredCol)
+    {
+        if(filteredCol.ContainsKey(0) && filteredCol.ContainsKey(1) && filteredCol.ContainsKey(2) && filteredCol.ContainsKey(3))
+        {
+            InitializePlotModels();
+            filteredRawDataInRowsArray = filteredRow;
+            dataCount = filteredRawDataInRowsArray.Count;
+            data2show = "filtered";
+            List<double> depth = filteredCol[0];
+            List<double> coneR = filteredCol[1];
+            List<double> sf = filteredCol[2];
+            List<double> pp = filteredCol[3]; 
+
+            for(int i = 0; i < coneR.Count; i++)
+            {
+                coneSeries.Points.Add(new DataPoint(coneR[i],depth[i]));
+                sleeveSeries.Points.Add(new DataPoint(sf[i],depth[i]));
+                poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
+            }
+        }
+    }
+    public void Hello()
+    {
+        Console.WriteLine("Hello Referee");
+    }
+    /*private bool ParseAndPopulateData(int index,string xDepth, string val)
+    {
+        double value = 0;
+        double depth = 0;
+        bool isValueValid = false;
+        if(double.TryParse(xDepth, out depth) && double.TryParse(val, out value))
+        {
+            isValueValid = true;
+            if(index != 0)
+            {
+               GenerateDynamicPlot(index, value, depth);//plot of Penetration against depth
+            }
+        }
+        else
+        {
+            isValueValid = false;
+            value = 0;
+        }
+        return isValueValid;
+    }
+    */
+    /*chart display codes here*/
+    public void InitializePlotModels()
+    {
+       coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
+       sleeveModel = new PlotModel { Title = "Sleeve Friction,MPa"};
+       poreModel = new PlotModel { Title = "Pore Pressure,MPa"};
+
+        /*Initializing cone model*/ 
+       coneXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+       coneModel.Axes.Add(coneXAxis);
+       var coneYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       coneModel.Axes.Add(coneYAxis);
+       coneSeries = new LineSeries
+        {
+            Title = "cone",
             MarkerType = MarkerType.Circle,
-            Color = OxyColor.Parse("#00FF00")
+            MarkerSize = 1,
+            Color = OxyColors.Red,
+            StrokeThickness = 2
         };
         coneModel.Series.Add(coneSeries);
 
         /*Initializing sleeve model*/ 
-        sleeveXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+        sleeveXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
         sleeveModel.Axes.Add(sleeveXAxis);
-        sleeveYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
+        sleeveYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
         sleeveModel.Axes.Add(sleeveYAxis);
         sleeveSeries = new LineSeries
         {
-            Title = "con res.",
+            Title = "sleeve",
             MarkerType = MarkerType.Circle,
-            Color = OxyColor.Parse("#00FF00")
+            Color = OxyColors.Blue,
+            MarkerSize = 1,
+            StrokeThickness = 2
         };
         sleeveModel.Series.Add(sleeveSeries);
 
         /*Initializing pore pressure model*/ 
-       poreXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       poreXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
        poreModel.Axes.Add(poreXAxis);
-       poreYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
+       poreYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
        poreModel.Axes.Add(poreYAxis);
        poreSeries = new LineSeries
         {
-            Title = "con res.",
+            Title = "pore pressure",
             MarkerType = MarkerType.Circle,
-            Color = OxyColor.Parse("#00FF00")
+            Color = OxyColor.Parse("#00FF00"),
+            MarkerSize = 1,
+            StrokeThickness = 2
         };
         poreModel.Series.Add(poreSeries);
     }
-    /*
-    private void SetupDynamicPlotModel()
+    private void GenerateDynamicPlot(int index, double x, double y)
     {
-        //You can always initialize xAxis and Yaxis minimum and maximum here.
-        dynamicSeries = new LineSeries
+        if(headerIndexDict.ContainsKey(index))
         {
-            Title = "Series 2",
-            MarkerType = MarkerType.Circle,
-            Color = OxyColor.Parse("#00FF00")
-        };
-        plotModel.Series.Add(dynamicSeries);
-       XAxis = new LinearAxis(){Position = AxisPosition.Bottom, StartPosition = 0, EndPosition = 1,Minimum = -60, Maximum = 60,   MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Distance (m)"};
-       plotModel.Axes.Add(XAxis);
-       YAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 0, EndPosition = 1, Minimum = 0, Maximum = 3000,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (kPa)"};
-       plotModel.Axes.Add(YAxis);
-    }
-    private void DynamicPlot()
-    {
-        increment++;
-        int a = increment;
-        double y = Math.Pow(a,2) + 6 * a + 5;
-        dynamicSeries.Points.Add(new DataPoint(a,y));
-        UpdateDynamicPlots(a,y);
-    }
-        private void UpdateDynamicPlots(int a, double y)
-    {
-        if(a > 60)
-        {
-            XAxis.Maximum = a;
+            if(index == 1)//tip resistance
+            {
+                coneSeries.Points.Add(new DataPoint(x,y));
+                coneModel.InvalidatePlot(true);
+            }
+            else if(index == 2)
+            {
+                sleeveSeries.Points.Add(new DataPoint(x,y));
+                sleeveModel.InvalidatePlot(true);
+            }
+            else if(index == 3)
+            {
+                poreSeries.Points.Add(new DataPoint(x,y));
+                poreModel.InvalidatePlot(true);
+            }
         }
-        if(y > 3000)
-        {
-            YAxis.Maximum = y;
-        }
-        plotModel.InvalidatePlot(true);
+
     }
-    */
+
+
+
+
 }

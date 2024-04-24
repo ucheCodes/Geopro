@@ -1,0 +1,157 @@
+﻿    <div class="col-2">
+        @if(isRender)
+        {
+            <BlazorPlotView Model="@coneModel" Width="400" Height="650" />
+            <BlazorPlotView Model="@sleeveModel" Width="400" Height="650" />
+            <BlazorPlotView Model="@poreModel" Width="400" Height="650" />
+        }
+    </div>
+
+@code {
+    [Parameter]
+    public bool isRender {get; set;} = false;
+    [Parameter]
+    public List<string[]> dataArray {get; set;} = new();
+    [Parameter]
+    public string data2show {get; set;} = "";
+    [Parameter]
+    public Dictionary<int, string> headerIndexDict {get;set;} = new();
+    [Parameter]
+    public List<double[]> filteredRawDataInRowsArray {get; set;} = new();
+    [Parameter]
+    public Dictionary<int, List<double>> filteredRawDataInColumnsDict {get;set;} = new();
+    public PlotModel coneModel = new PlotModel();
+    public PlotModel sleeveModel = new PlotModel();
+    public PlotModel poreModel = new PlotModel(); 
+    LinearAxis coneXAxis = new LinearAxis();
+    LinearAxis coneYAxis = new LinearAxis();
+    LineSeries coneSeries = new LineSeries();
+    LinearAxis sleeveXAxis = new LinearAxis();
+    LinearAxis sleeveYAxis = new LinearAxis();
+    LineSeries sleeveSeries = new LineSeries();
+    LinearAxis poreXAxis = new LinearAxis();
+    LinearAxis poreYAxis = new LinearAxis();
+    LineSeries poreSeries = new LineSeries();
+
+
+    protected override void OnInitialized()
+    {
+        InitializePlotModels();
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(data2show == "raw")
+        {
+             ViewRawData();
+        }
+        else if(data2show == "filtered" && filteredRawDataInRowsArray.Count > 0 && filteredRawDataInColumnsDict.Count() > 0)
+        {
+             ViewFilteredData(filteredRawDataInRowsArray, filteredRawDataInColumnsDict);
+        }
+        //Console.WriteLine($"{data2show} {filteredRawDataInRowsArray.Count} {filteredRawDataInColumnsDict.Count()} {dataArray.Count}");
+    }
+    public void ViewRawData()
+    {
+        if(dataArray.Count > 0)
+        {
+            InitializePlotModels();
+            foreach(var row in dataArray)
+            {
+                int index = 0;               
+                foreach(var item in row)
+                {
+                    string xDepth = row[0];
+                    double value = 0; double depth = 0;
+                    if(double.TryParse(xDepth, out depth) && double.TryParse(item, out value))
+                    {
+                        var x = value; var y = depth;
+                        if(index != 0 && headerIndexDict.ContainsKey(index))
+                        {
+                            if(index == 1)
+                            {
+                                coneSeries.Points.Add(new DataPoint(x,y));
+                            }
+                            else if(index == 2)
+                            {
+                                sleeveSeries.Points.Add(new DataPoint(x,y));
+                            }
+                            else if(index == 3)
+                            {
+                                poreSeries.Points.Add(new DataPoint(x,y));
+                            }
+                        }
+                    }
+                    index++;
+                }
+            }
+        }
+    }
+    public void ViewFilteredData(List<double[]> filteredRow, Dictionary<int, List<double>> filteredCol)
+    {
+        if(filteredCol.ContainsKey(0) && filteredCol.ContainsKey(1) && filteredCol.ContainsKey(2) && filteredCol.ContainsKey(3))
+        {
+            InitializePlotModels();
+            filteredRawDataInRowsArray = filteredRow;
+            List<double> depth = filteredCol[0];
+            List<double> coneR = filteredCol[1];
+            List<double> sf = filteredCol[2];
+            List<double> pp = filteredCol[3]; 
+
+            for(int i = 0; i < coneR.Count; i++)
+            {
+                coneSeries.Points.Add(new DataPoint(coneR[i],depth[i]));
+                sleeveSeries.Points.Add(new DataPoint(sf[i],depth[i]));
+                poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
+            }
+        }
+    }
+
+    private void InitializePlotModels()
+    {
+       coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
+       sleeveModel = new PlotModel { Title = "Sleeve Friction,MPa"};
+       poreModel = new PlotModel { Title = "Pore Pressure,MPa"};
+
+       coneXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+       coneModel.Axes.Add(coneXAxis);
+       var coneYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       coneModel.Axes.Add(coneYAxis);
+       coneSeries = new LineSeries
+        {
+            Title = "cone",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColors.Red,
+            MarkerSize = 1,
+            StrokeThickness = 3
+        };
+        coneModel.Series.Add(coneSeries);
+
+        sleeveXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+        sleeveModel.Axes.Add(sleeveXAxis);
+        sleeveYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+        sleeveModel.Axes.Add(sleeveYAxis);
+        sleeveSeries = new LineSeries
+        {
+            Title = "sleeve",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColors.Blue,
+            MarkerSize = 1,
+            StrokeThickness = 3
+        };
+        sleeveModel.Series.Add(sleeveSeries);
+
+       poreXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+       poreModel.Axes.Add(poreXAxis);
+       poreYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       poreModel.Axes.Add(poreYAxis);
+       poreSeries = new LineSeries
+        {
+            Title = "pore pressure",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColor.Parse("#00FF00"),
+            MarkerSize = 1,
+            StrokeThickness = 3
+        };
+        poreModel.Series.Add(poreSeries);
+    }
+}
