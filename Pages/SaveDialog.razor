@@ -1,0 +1,75 @@
+﻿@page "/save"
+@inject NavigationManager navigationManager
+
+        <div>
+        <h3>Save Project Progress</h3>
+        </div>
+        <span class="red">@msg</span>
+        <div class="input-group">
+            <input @bind="name" type="text" placeholder="Data Processor Name" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="title" type="text" placeholder="Project Title"  name="input2">
+        </div>
+        <div class="input-group">
+            <input @bind="location" type="text" placeholder="Project Location"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="easting" type="text" placeholder="Project Location Easting"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="northing" type="text" placeholder="Project Location Northing"  name="input3">
+        </div>
+        <div class="input-group">
+            <textarea @bind="description" id="textarea" placeholder="Project Description"  name="textarea"></textarea>
+        </div>
+        <button @onclick="Save" class="btn">Submit</button>
+
+@code{
+    string name = "opi";
+    string title = "";
+    string location = "";
+    string description = "";
+    string easting = "";
+    string northing = "nort";
+    string msg = "";
+    [Parameter]
+    public EventCallback<ProjectInfo> HandleClickEventCalls {get; set;}
+    [Parameter]
+    public ProjectInfo ProjectInfo {get; set;} = new();
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(ProjectInfo.Name != "")
+        {
+            name = ProjectInfo.Name;
+            location = ProjectInfo.Location;
+            title = ProjectInfo.Title;
+            description = ProjectInfo.Description;
+            easting = ProjectInfo.Easting;
+            northing = ProjectInfo.Northing;
+        }
+        var info = ProjectInfo;
+            Console.WriteLine($"{info.Name} {info.Title} {info.Easting} {info.Northing} {info.Location} {info.Description}");
+    }
+    private void Save()
+    {
+        if(name != "" && title != ""  && location != "")
+        {
+            var info = new ProjectInfo()
+            {
+                Name = name,
+                Title = title,
+                Location = location,
+                Description = description,
+                Easting = easting,
+                Northing = northing
+            };
+            msg = "";
+            HandleClickEventCalls.InvokeAsync(info);
+        }
+        else
+        {
+            msg = "Project must be saved with atleast a processors name, project title and project location";
+        }
+    }
+}

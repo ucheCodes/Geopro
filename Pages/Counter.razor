@@ -1,4 +1,6 @@
-﻿@page "/table"
+﻿@page "/counter"
+@inject DatabaseService database
+
 @if(isDataExist)
 {
     <div class="dynamic-table">
@@ -27,23 +29,61 @@
 
 @code{
     bool isDataExist = false;
-    /*
-    
-    
-    */
-
-
-         /*   private void UpdateDynamicPlots(int a, double y)
+    protected override void OnInitialized()
     {
-        if(a > 60)
-        {
-            XAxis.Maximum = a;
-        }
-        if(y > 3000)
-        {
-            YAxis.Maximum = y;
-        }
-        plotModel.InvalidatePlot(true);
+        Test();
     }
-    */
+    private void Test()
+    {
+       /*
+       bool isCreated = false;
+        for(var i = 0; i < 11; i++)
+        {
+            //CREATE CODES
+            string key = JsonConvert.SerializeObject(i.ToString());
+            string value = JsonConvert.SerializeObject(i * 100).ToString();
+            isCreated = database.Create("Numbers",key,value);
+        }
+        Console.WriteLine($"Hello, I have been clicked! {isCreated}"); 
+        */
+
+        /*
+        //READ CODES
+        for(var i = 0; i < 11; i++)
+        {
+            var data = database.Read("Numbers", i.ToString());
+            Console.WriteLine($"key : {data.Key} - value : {data.Value}");
+        }
+        //Console.WriteLine(key);
+        */
+
+        /* 
+        //EXISTS CODES
+        bool data = database.Exists("Numbers", "5");
+        Console.WriteLine($"is exist {data}  ready for read all"); 
+        */
+
+        /*
+        //DELETE CODES
+        bool data = database.Delete("Numbers", "5");
+        Console.WriteLine($"is deleted {data}");       
+        */
+
+        ///*
+        //DELETE ALL CODES
+        bool data = database.DeleteAll("Numbers", true);
+        Console.WriteLine($"is deleted {data}");  
+        //*/
+
+        //*
+        //READALL CODES
+        var data2 = database.ReadAll("Numbers");
+        foreach(var d in data2){
+            var msg = $" {d.Key}/{d.Value} ";
+            Console.WriteLine(msg);
+        }
+        Console.WriteLine($"{data2.Count()} - data ");
+        //*/
+
+        }
 }

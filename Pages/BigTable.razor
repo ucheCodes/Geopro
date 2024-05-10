@@ -1,5 +1,6 @@
-﻿
-        @if(headerArray != null && headerArray.Count > 0 && dataArray != null && dataArray.Count > 0)
+﻿  @inject State state
+
+        @if(state.HeaderArray.Value != null && state.HeaderArray.Value.Count > 0 && dataArray != null && dataArray.Count > 0)
         {
             <div class="dynamic-table">
                 <div class="table-header">
@@ -10,7 +11,7 @@
                     <div class="table-body">
                         <table>
                             <thead>
-                                @foreach(var row in headerArray)
+                                @foreach(var row in state.HeaderArray.Value)
                                 {
                                     <tr>
                                         @foreach(var data in row)
@@ -24,7 +25,7 @@
                                 }
                             </thead>
                             <tbody>
-                                @if(data2show == "raw" && dataArray.Count > 0)
+                                @if(state.Data2Show.Value == "raw" && dataArray.Count > 0)
                                 {
                                     foreach(var row in dataArray)
                                 {
@@ -33,7 +34,7 @@
                                         @foreach(var data in row)
                                         {
                                             string xDepth = row[0];
-                                            if(!string.IsNullOrWhiteSpace(data) && headerIndexDict.ContainsKey(index))// && ParseAndPopulateData(index, xDepth, data)
+                                            if(!string.IsNullOrWhiteSpace(data) && state.HeaderIndexDict.Value.ContainsKey(index))// && ParseAndPopulateData(index, xDepth, data)
                                             {
                                                 <td>@data</td>
                                             }
@@ -46,7 +47,7 @@
                                     </tr>
                                 }
                                 }
-                                else if(data2show == "filtered" && filteredRawDataInRowsArray.Count > 0)
+                                else if(state.Data2Show.Value == "filtered" && filteredRawDataInRowsArray.Count > 0)
                                 {
                                     foreach(var row in filteredRawDataInRowsArray)
                                     {
@@ -54,7 +55,7 @@
                                         <tr>
                                             @foreach(var data in row)
                                             {
-                                                if(headerIndexDict.ContainsKey(index))
+                                                if(state.HeaderIndexDict.Value.ContainsKey(index))
                                                 {
                                                     <td>@data</td>
                                                 }
@@ -78,23 +79,17 @@
     [Parameter]
     public string TableTiltle {get;set;} = "";
     [Parameter]
-    public string data2show {get; set;} = "";
-    [Parameter]
     public List<double[]> filteredRawDataInRowsArray {get; set;} = new();
     [Parameter]
     public List<string[]> dataArray {get; set;} = new();
-    [Parameter]
-    public Dictionary<int, string> headerIndexDict {get;set;} = new();
-    [Parameter]
-    public List<string[]> headerArray {get;set;} = new();
     int dataCount = 0;
     protected override void OnAfterRender(bool firstRender)
     {
-        if(data2show == "raw")
+        if(state.Data2Show.Value == "raw")
         {
              dataCount = dataArray.Count;
         }
-        else if(data2show == "filtered")
+        else if(state.Data2Show.Value == "filtered")
         {
              dataCount = filteredRawDataInRowsArray.Count;
         }

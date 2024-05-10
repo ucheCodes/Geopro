@@ -1,0 +1,12 @@
+﻿@page "/output"
+@inject NavigationManager navigationManager
+<div class="output"> 
+<h1>Save Chart for Reports</h1>
+<strong class="red">Right click on chart to Trim, Copy or Save as *.png</strong>
+<span @onclick="@((e) => {navigationManager.NavigateTo("/");})" class="red x">X</span> 
+    <div id="output">
+    
+    </div>
+</div>
+@code {
+}

@@ -69,19 +69,23 @@
 .icons i:hover{
     color: #ccc;
 }
-.icons span{
+/*.icons .icons-group span{
+  flex-direction: column;//use if I'm not making use of span
+  display: flex;
+}*/
+.icons .icons-group{
     opacity: 0;
 }
-.icons span.active{
+.icons .icons-group.active{
     opacity: 1;
 }
 .label{
-    padding: 2px 8px;
-    font-size: 20px;
+    padding: 2px 5px;
+    font-size: 18px;
     font-weight: bold;
 }
 .label.red{
-  color: red;
+  color: maroon;
 }
 
 .label.green{
@@ -93,7 +97,7 @@
 .red{
   color: maroon;
 }
-.graph,.big-table{
+.graph,.big-table, .projects{
   width: 100%;
   height: 100vh;
   padding: 0;
@@ -107,22 +111,105 @@
   background-color: lightgray;
   z-index: 3;
 }
-.big-table{
+.big-table, .projects{
   background: darkgray;
   z-index: 2;
   padding: .7rem;
 }
-.graph.active, .big-table.active{
+.graph.active, .big-table.active, .projects.active{
   display: block;
 }
+.graph .camera{
+  font-size: 1.6rem;
+  position: absolute;
+  right: 42px;
+  top: 8px;
+}
+.graph .camera:hover{
+  color: darkblue;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
 .x{
-  font-size: 2rem;
+  font-size: 1.6rem;
   position: absolute;
   right: 10px;
   top: 8px;
 }
 .x:hover{
   color: red;
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   cursor: pointer;
+}
+
+/*save dialog*/
+.dialog-body{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  display: none;
+}
+.dialog-body.active{
+  display: block;
+}
+.dialog-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background-color: lightgray;
+  width: 450px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(8, 7, 7, 0.1);
+  position: relative;
+  z-index: 4;
+}
+
+.input-group {
+  margin-bottom: 15px;
+  width: 100%;
+  padding: 5px;
+}
+
+.input-group input[type="text"],#textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+#textarea{
+  height: 100px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+.output{
+  width: 98%;
+  height: 95vh;
+  margin: .5rem;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.output #output{
+  max-width: 95%;
+  max-height: 95%;
 }

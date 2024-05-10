@@ -1,0 +1,79 @@
+﻿@inject DatabaseService database
+@*inject IState state*@
+
+@if(projects.Count > 0)
+{
+    <div class="dynamic-table">
+        <div class="table-header">
+            <h3 class="heading">Saved Projects</h3>
+            <bold>@projects.Count projects</bold>
+        </div>
+            <div class="table large">
+            <div class="table-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>S/N</th>
+                            <th>Project Name</th>
+                            <th>Project Location</th>
+                            <th>Processor</th>
+                            <th>Data count</th>
+                            <th>Edit Project</th>
+                            <th>Edit Info</th>
+                            <th>Delete Project</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var project in projects)
+                        {
+                            <tr>
+                                <td>@count</td>
+                                <td>@project.Info.Title</td>
+                                <td>@project.Info.Location</td>
+                                <td>@project.Info.Name</td>
+                                <td>@project.DataArray.Count</td>
+                                <td><i @onclick="@((e) => ModifyProject("view",project))" class="fas fa-edit icons"/></td>
+                                <td><i @onclick="@((e) => ModifyProject("edit",project))"  class="fas fa-user icons"/></td>
+                                <td><i @onclick="@((e) => ModifyProject("delete",project))"  class="fas fa-trash icons"/></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else{
+    <h3>No Projects Saved</h3>
+}
+@code {
+    List<Project> projects = new();
+    int count = 0;
+    [Parameter]
+    public EventCallback<Tuple<string,Project>> ProjectEventCallBack {get;set;}
+    protected override void OnInitialized()
+    {
+        GetAllProjects();
+    }
+    private void GetAllProjects()
+    {
+        count = 0;
+        var _projects = database.ReadAll("Projects");
+        if(_projects.Count() > 0)
+        {
+            foreach(var p in _projects)
+            {
+                Project value = JsonConvert.DeserializeObject<Project>(p.Value) ?? new();
+                projects.Add(value);
+            }
+        }
+    }
+    private void ModifyProject(string operation, Project p)
+    {
+        var tupleData = new Tuple<string,Project>(operation,p);
+        ProjectEventCallBack.InvokeAsync(tupleData);
+        /*Action<IState> update = _state => _state.Name ="John Legend";
+        Store store = new Store(state);
+        store.UpdateState(update);*/
+    }
+}

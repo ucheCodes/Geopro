@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using PenPro.Data;
+using PenPro.Database;
+using PenPro.Store;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddOxyPlotBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
+builder.Services.AddScoped<DatabaseService>();
+builder.Services.AddScoped<IStore,Store>();
+builder.Services.AddScoped<State>();
 
 var app = builder.Build();
 

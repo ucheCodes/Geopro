@@ -1,6 +1,9 @@
-﻿ <div class="content">
+﻿ @inject IStore store
+  @inject State state
+
+ <div class="content">
      <div class="col-1">
-        @if(headerArray.Count > 0 && dataArray.Count > 0)
+        @if(state.HeaderArray.Value.Count > 0) 
         {
             <div class="dynamic-table">
                 <div class="table-header">
@@ -11,7 +14,7 @@
                     <div class="table-body">
                         <table>
                             <thead>
-                                @foreach(var row in headerArray)
+                                @foreach(var row in state.HeaderArray.Value)
                                 {
                                     <tr>
                                         @foreach(var data in row)
@@ -27,14 +30,14 @@
                             <tbody>
                                 @if(data2show == "raw")
                                 {
-                                    foreach(var row in dataArray)
+                                foreach(var row in dataArray)
                                 {
                                     int index = 0;
                                     <tr>
                                         @foreach(var data in row)
                                         {
                                             string xDepth = row[0];
-                                            if(!string.IsNullOrWhiteSpace(data) && headerIndexDict.ContainsKey(index))// && ParseAndPopulateData(index, xDepth, data)
+                                            if(!string.IsNullOrWhiteSpace(data) && headerIndexDict.ContainsKey(index))
                                             {
                                                 <td>@data</td>
                                             }
@@ -55,7 +58,7 @@
                                         <tr>
                                             @foreach(var data in row)
                                             {
-                                                if(headerIndexDict.ContainsKey(index))
+                                                if(state.HeaderIndexDict.Value.ContainsKey(index))
                                                 {
                                                     <td>@data</td>
                                                 }
@@ -73,10 +76,10 @@
                     </div>
                 </div>
             </div>
-        }       
+        }     
     </div>
     
-    <div class="col-2">
+    <div class="col-2" id="chart1">
         <BlazorPlotView Model="@coneModel" Width="200" Height="565" />
         <BlazorPlotView Model="@sleeveModel" Width="200" Height="565" />
         <BlazorPlotView Model="@poreModel" Width="200" Height="565" />
@@ -87,16 +90,9 @@
     [Parameter]
     public string TableTiltle {get;set;} = "";
     [Parameter]
-    public List<string[]> dataArray {get; set;} = new();
-    [Parameter]
-    public List<string[]> headerArray {get; set;} = new();
-    [Parameter]
-    public bool IsNewChart {get; set;} = false;
-    [Parameter]
     public Dictionary<int,string> headerIndexDict {get; set;} = new();
-    [Parameter]
-    public EventCallback<int> HandleClickEventCalls {get; set;}
     Dictionary<int, List<double>> rawDataDict = new Dictionary<int, List<double>>();
+    private List<string[]> dataArray {get; set;} = new();
     public PlotModel coneModel = new PlotModel();
     public PlotModel sleeveModel = new PlotModel();
     public PlotModel poreModel = new PlotModel(); 
@@ -115,19 +111,21 @@
     protected override void OnInitialized()
     {
         InitializePlotModels();
+        //Console.WriteLine($"H A {state.HeaderArray.Value.Count} {headerArray.Count} {dataArray.Count}");
     }
     protected override void OnAfterRender(bool firstRender)
     {
     }
 
-    public void ViewRawData()
+    public void ViewRawData(List<string[]> _dataArray)
     {
-        if(dataArray.Count > 0)
+        if(_dataArray.Count > 0)
         {
             InitializePlotModels();
             data2show = "raw";
+            dataArray = _dataArray;
             dataCount = dataArray.Count;
-            foreach(var row in dataArray)
+            foreach(var row in _dataArray)
             {
                 int index = 0;               
                 foreach(var item in row)
@@ -137,7 +135,7 @@
                     if(double.TryParse(xDepth, out depth) && double.TryParse(item, out value))
                     {
                         var x = value; var y = depth;
-                        if(index != 0 && headerIndexDict.ContainsKey(index))
+                        if(index != 0 && state.HeaderIndexDict.Value.ContainsKey(index))
                         {
                             if(index == 1)//tip resistance
                             {
@@ -157,6 +155,8 @@
                 }
             }
         }
+        //Console.WriteLine($"{_dataArray.Count} : {dataArray.Count} : {dataCount} viewing raw data");
+        //InvokeAsync(StateHasChanged);
     }
     public void ViewFilteredData(List<double[]> filteredRow, Dictionary<int, List<double>> filteredCol)
     {
@@ -178,10 +178,6 @@
                 poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
             }
         }
-    }
-    public void Hello()
-    {
-        Console.WriteLine("Hello Referee");
     }
     /*private bool ParseAndPopulateData(int index,string xDepth, string val)
     {
@@ -258,7 +254,7 @@
     }
     private void GenerateDynamicPlot(int index, double x, double y)
     {
-        if(headerIndexDict.ContainsKey(index))
+        if(state.HeaderIndexDict.Value.ContainsKey(index))
         {
             if(index == 1)//tip resistance
             {

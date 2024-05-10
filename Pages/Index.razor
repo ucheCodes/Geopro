@@ -1,63 +1,92 @@
 ﻿@page "/"
+@inject DatabaseService database
 @inject NavigationManager navigationManager
 @inject IJSRuntime jSRuntime
+@inject IStore store
+@inject State state
 
 <InputFile type="file" id="fileInput" style="display: none;"  OnChange="@HandleFileChange" accept=".csv,.txt"/>
-<section class="container">  
+<section @onkeydown="HandleKeyDown" class="container">  
   <div class="menu">
     <ul class="menu-items">
-      <li @onclick="(() => ToggleMenu(file))"><i class="@((activeMenu == file) ? "active" : "")">New</i></li>
+      <li @onclick="(() => ToggleMenu(file))"><i class="@((activeMenu == file) ? "active" : "")">New Project</i></li>
       <li @onclick="(() => ToggleMenu(edit))"><i class="@((activeMenu == edit) ? "active" : "")">Edit</i></li>
       <li @onclick="(() => ToggleMenu(process))"><i>Process</i></li>
       <li @onclick="(() => ToggleMenu(view))"><i class="@((activeMenu == view) ? "active" : "")">View</i></li>
+      <li @onclick="(() => ToggleMenu(save))"><i class="@((activeMenu == save) ? "active" : "")">Save</i></li>
     </ul>
 
     <div class="icons">
         <div>
-            <span class="@((activeMenu == file) ? "active" : "")">
+            <span class="icons-group @((activeMenu == file) ? "active" : "")">
                 <i @onclick="(() => ShowFileDialog(true))" class="fas fa-file-csv"></i>
-                <i class="fas fa-save"></i>
+                <i @onclick="(() => {showProjects = true;})" class="fas fa-eye"></i>
                 <i @onclick="ClearAll"  class="fas fa-trash"></i>
             </span>
-            <span class="@((activeMenu == edit) ? "active" : "")">
-                <i @onclick="(() => ShowFileDialog(false))"  class="fas fa-folder-open"></i>
+            <span class="icons-group @((activeMenu == edit) ? "active" : "")">
+                    <i @onclick="(() => ShowFileDialog(false))"  class="fas fa-folder-open"></i>
+                    <b class="tool-tip">Tool tip message here</b>
             </span>
-            <span class="@((activeMenu == process) ? "active" : "")">
+            <span class="icons-group @((activeMenu == process) ? "active" : "")">
                 <i @onclick="ViewRawData"  class="fas fa-table"></i>
                 <i @onclick="ViewFilteredData"  class="fas fa-server"></i>
-                <i class="fas fa-tv"></i>  @*@onclick="Test" *@             
+                <i class="fas fa-tv"></i>             
             </span>
-            <span class="@((activeMenu == view) ? "active" : "")">
+            <span class="icons-group @((activeMenu == view) ? "active" : "")">
                 <i @onclick="(() => {showBigGraph = true;})" class="fas fa-chart-line"></i>
                 <i @onclick="(() => {showBigTable = true;})"  class="far fa-file-excel"></i>
+            </span>
+            <span class="icons-group @((activeMenu == save) ? "active" : "")">
+                <i @onclick="Save" class="fas fa-save"></i>
+                <i @onclick="@((e) => {navigationManager.NavigateTo("/writer");})" class="fas fa-edit"></i>
+                <i @onclick="@(e =>Screenshot("chart1"))" class="fas fa-camera"></i>
             </span>
         </div>
         <label class="label @msgClass">@iconMsg</label>
     </div>
   </div> 
-  <Chart @ref="chartRef" TableTiltle="@tableTitle"  dataArray=dataArray headerArray=headerArray headerIndexDict=headerIndexDict IsNewChart=IsNewChart  />
+
+  <Chart headerIndexDict="state.HeaderIndexDict.Value"  @ref="chartRef" TableTiltle="@tableTitle" />
   
  <div class="graph @((showBigGraph) ? "active" : "")">
     <span @onclick="(() => {showBigGraph = false;})" class="red x">X</span> 
+    <span @onclick="@(e =>Screenshot("chart2"))" class="camera"><i class="fas fa-camera-retro"></i></span>
         <div>
-            <BigGraph isRender="showBigGraph" data2show="@data2show" dataArray="dataArray" headerIndexDict="headerIndexDict" filteredRawDataInColumnsDict="filteredRawDataInColumnsDict" filteredRawDataInRowsArray ="filteredRawDataInRowsArray"/>
+            <BigGraph isRender="showBigGraph" dataArray="dataArray"
+             filteredRawDataInColumnsDict="filteredRawDataInColumnsDict"
+             headerIndexDict="state.HeaderIndexDict.Value" 
+              filteredRawDataInRowsArray ="filteredRawDataInRowsArray" strokeInfo="strokeInfo"/>
         </div>
   </div> 
 
 
     <div class="big-table @((showBigTable) ? "active" : "")">
         <span @onclick="(() => {showBigTable = false;})" class="red x">X</span> 
-            <BigTable  TableTiltle="@tableTitle" data2show="@data2show"   headerIndexDict="headerIndexDict" headerArray="headerArray"  dataArray="dataArray" filteredRawDataInRowsArray ="filteredRawDataInRowsArray" />   
-        </div>
+            <BigTable  TableTiltle="@tableTitle"  dataArray="dataArray" filteredRawDataInRowsArray ="filteredRawDataInRowsArray" />   
+    </div>
+
+    <div class="dialog-body @((showSaveDialog) ? "active" : "")">
+        @if(showSaveDialog)
+        {
+            <div class="dialog-box">
+                <span @onclick="(() => {showSaveDialog = false;})" class="red x">X</span>
+                <SaveDialog ProjectInfo="info" HandleClickEventCalls="ClickedEventCallToSave" />
+            </div>
+        }
+    </div>
+
+    <div class="projects @((showProjects) ? "active" : "")">
+        <span @onclick="(() => {showProjects = false;})" class="red x">X</span> 
+        <ProjectsTable ProjectEventCallBack="ModifySavedProject" /> 
+    </div>
 </section>
 
 @code{
     public Chart? chartRef; //@onmouseover="@(e => HandleMouseOverIconsTooltip("Load a new *.csv data file", file))" 
-    bool IsNewChart = false;//data2show="@chartRef.data2show"
-    bool isDataLoaded = false;
-    bool isNewDataClicked = false;
     bool showBigGraph = false;
     bool showBigTable = false;
+    bool showSaveDialog = false;
+    bool showProjects = false;
     bool isFiltered = false;
     string iconMsg = "";
     string msgClass = "black";
@@ -66,21 +95,55 @@
     string edit = "edit";
     string view = "view";
     string process = "process";
-    string data2show = "";
+    string save = "save";
     string tableTitle = "";
 
     string[]? lastDataArray;
-    List<string[]> headerArray = new List<string[]>();
+    Project project = new();
+    ProjectInfo info = new();
     List<string[]> dataArray = new List<string[]>();
     List<double[]> filteredRawDataInRowsArray = new List<double[]>();
     List<double> submergedDensityInCol = new List<double>();
     List<string> soilNatureInCols = new();
+    List<double> strokeInfo = new();
     Dictionary<int, List<double>> filteredRawDataInColumnsDict = new Dictionary<int, List<double>>();
-    Dictionary<int, string> headerIndexDict = new Dictionary<int, string> ();//index is key, result is value
-    Dictionary<int, string> headerUnitDict = new Dictionary<int, string>();//key is header inder, value is unit
+    protected override void OnInitialized()
+    {
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        ReloadData();
+    }
+
     private void ToggleMenu(string itemClicked)
     {
         activeMenu = itemClicked;
+    }
+    private void ReloadData()
+    {
+        if(state.DataArray.Value.Count > dataArray.Count)
+        {
+            dataArray = state.DataArray.Value;
+            strokeInfo = state.StrokeInfo.Value;
+            //later on, add some conditions for computed cpt values
+            if(state.Data2Show.Value == "raw")
+            {
+                ViewRawData();
+            }
+            else if(state.Data2Show.Value == "filtered")
+            {
+                ViewFilteredData();
+            }
+            InvokeAsync(StateHasChanged);
+        }
+    }
+    private async void Screenshot(string id)
+    {
+        if(state.Data2Show.Value != "")
+        {
+            await jSRuntime.InvokeVoidAsync("screenShot",id);
+            navigationManager.NavigateTo($"/output");
+        }
     }
     private void Test()
     {
@@ -119,9 +182,10 @@
     {
        if(chartRef != null && dataArray.Count > 0)
        {
-        data2show = "raw";
-        tableTitle = "CPT Raw Data";
-         chartRef.ViewRawData();
+         store.Mutate<string>("Data2Show","raw");
+         tableTitle = "CPT Raw Data";
+         chartRef.ViewRawData(dataArray);
+         iconMsg = "";
        }
         else
        {
@@ -138,9 +202,10 @@
                 filteredRawDataInRowsArray = new();
                 filteredRawDataInRowsArray = FilterRawData(dataArray);
                 chartRef.ViewFilteredData(filteredRawDataInRowsArray,filteredRawDataInColumnsDict);
-                data2show = "filtered";
+                store.Mutate<string>("Data2Show","filtered");
                 tableTitle = "CPT Filtered Data";
                 isFiltered = true;
+                iconMsg = "";
             }
             else
             {
@@ -164,6 +229,125 @@
     private void HandleMouseOutIcon()
     {
         iconMsg = "";
+    }
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.CtrlKey && e.Key == "s")
+        {
+            Console.WriteLine("saving ...");
+            //e.PreventDefault(); 
+            Save();
+        }
+        else{
+            //Console.WriteLine($"{e.Key} was pressed down");
+        }
+    }
+    private void ModifySavedProject(Tuple<string,Project> tupleData)
+    {
+        string operation = tupleData.Item1;
+        Project _project = tupleData.Item2;
+        if(operation == "edit")
+        {
+            info = _project.Info;
+            showSaveDialog = true;
+        }
+        else if(operation == "delete")
+        {
+            bool isDel = database.Delete("Projects", _project.Id);
+            if(isDel)
+            {
+                iconMsg = "Project deleted successfully";
+                showProjects = false;
+                msgClass = "red";
+            }
+        }
+        else if(operation == "view")
+        {
+            LoadSavedProject(_project);
+        }
+        showProjects = false;
+        InvokeAsync(StateHasChanged);
+    }
+    private void ClickedEventCallToSave(ProjectInfo info)
+    {
+        string id = Guid.NewGuid().ToString();//Modify to accommodate project edit
+        SaveProject(id, info);
+    }
+    private void SaveProject(string id, ProjectInfo info)
+    {//If I fix render issues, modify this code to accommodate edit
+        if(state.IsDataLoaded.Value && dataArray.Count > 0)
+        {
+            var _project = new Project()
+            {
+                DataArray = dataArray,
+                Id = id,
+                FilteredRawDataInRowsArray = filteredRawDataInRowsArray,
+                TableTitle = tableTitle, 
+                HeaderArray = state.HeaderArray.Value,
+                SubmergedDensityInCol = submergedDensityInCol,
+                SoilNatureInCols = soilNatureInCols,
+                StrokeInfo = strokeInfo,
+                FilteredRawDataInColumnsDict = filteredRawDataInColumnsDict,
+                HeaderIndexDict = state.HeaderIndexDict.Value,
+                HeaderUnitDict = state.HeaderUnitDict.Value,
+                IsFiltered = isFiltered,
+                Info = info
+            };//Include var for processed and computed data
+            if(lastDataArray != null)
+            {
+                project.LastDataArray = lastDataArray;
+            }
+            string key = JsonConvert.SerializeObject(_project.Id);
+            string value = JsonConvert.SerializeObject(_project);
+            bool isCreated = database.Create("Projects",key,value);
+            if(isCreated)
+            {
+                iconMsg = "Project progress saved!!!";
+                msgClass = "green";
+                project = _project;
+                showSaveDialog = false;
+            }
+        }
+        else
+        {
+            iconMsg = "Empty project cannot be saved, kindly start a new project";
+            msgClass = "red";
+        } 
+    }
+    private void Save()
+    {
+        //When keyboard save event listens, just call this function
+        if(project.Id == "" )
+        {
+            showSaveDialog = true;
+        }
+        else if(project.Id != "")
+        {
+           SaveProject(project.Id, project.Info);
+        }
+    }
+    private void LoadSavedProject(Project p)
+    {
+        if(p.DataArray.Count > 0)
+        {
+            ClearAll();
+            store.Mutate<bool>("IsDataLoaded",true);
+            dataArray = p.DataArray;
+            filteredRawDataInRowsArray = p.FilteredRawDataInRowsArray;
+            tableTitle = p.TableTitle;
+            store.Mutate<string>("Data2Show","raw");
+            store.Mutate<List<string[]>>("DataArray",p.DataArray);
+            store.Mutate<List<string[]>>("HeaderArray",p.HeaderArray);
+            store.Mutate<Dictionary<int, string>>("HeaderUnitDict",p.HeaderUnitDict);
+            store.Mutate<Dictionary<int, string>>("HeaderIndexDict",p.HeaderIndexDict);
+            submergedDensityInCol = p.SubmergedDensityInCol;
+            soilNatureInCols = p.SoilNatureInCols;
+            strokeInfo = p.StrokeInfo;
+            filteredRawDataInColumnsDict = p.FilteredRawDataInColumnsDict;
+            isFiltered = p.IsFiltered;
+            project = p;
+            ViewRawData();
+        };
     }
     private void ModifyDepthValuesAndAppend(string[] values)
     {
@@ -198,9 +382,9 @@
                 dataArray.Add(newValues);
             }
         }
-        catch(Exception)
+        catch(Exception e)
         {
-
+            Console.WriteLine(e.Message);
         }
     }
     private List<double[]> FilterRawData(List<string[]> rawDataArray)
@@ -259,7 +443,7 @@
     private void PopulateRawDataIntoColumns(int index, double value)
     {
         var listData = new List<double>();
-        if(headerIndexDict.ContainsKey(index))
+        if(state.HeaderIndexDict.Value.ContainsKey(index))
         {
             if(filteredRawDataInColumnsDict.ContainsKey(index))
             {
@@ -280,36 +464,46 @@
             {
                 string? line = string.Empty;
                 int lineIndex = 0;
+                List<string[]> headerArray = new();
                 while (((line = await reader.ReadLineAsync()) != null!) && !string.IsNullOrWhiteSpace(line))
                 {
                     string[] values = line.Split(',');
-                    if(lineIndex == 0 && isNewDataClicked)
+                    if(lineIndex == 0 && state.IsNewDataClicked.Value)
                     {
                         headerArray.Add(values);
                         PopulateHeaders(values);
                     }
-                    else if(lineIndex == 1 && isNewDataClicked)
+                    else if(lineIndex == 1 && state.IsNewDataClicked.Value)
                     {
                         headerArray.Add(values);
                         PopulateHeaderUnits(values);
                     }
                     else
                     {
-                        if(isNewDataClicked)
+                        if(state.IsNewDataClicked.Value)
                         {
                             dataArray.Add(values);
-                            isDataLoaded = true;
+                            store.Mutate<bool>("IsDataLoaded",true);
                         }
-                        else if(!isNewDataClicked && lineIndex > 1){
+                        else if(!state.IsNewDataClicked.Value && state.IsDataLoaded.Value &&  lineIndex > 1){
                             ModifyDepthValuesAndAppend(values);
+                        }
+                        else if(!state.IsNewDataClicked.Value && !state.IsDataLoaded.Value){
+                                break;
                         }
                     }
                     lineIndex++;
                 }
                 isFiltered = false;
-                //Console.WriteLine($"count of depth Array {dataArray.Count}");
+                GetAndSetStrokeCount();
+                if(headerArray.Count > 0)
+                {
+                    store.Mutate<List<string[]>>("HeaderArray",headerArray);
+                }
+                MutateDataArray();
             }
             ViewRawData();
+            MutateStrokeInfo();
         }
         catch (Exception ex)
         {
@@ -317,10 +511,34 @@
             iconMsg = $"Error reading the file: " + ex.Message;
         }
     }
-
+    private void GetAndSetStrokeCount()
+    {
+        if(dataArray.Count > 0)
+        {
+            double depth = 0;
+            var lastData = dataArray[dataArray.Count - 1];
+            double.TryParse(lastData[0], out depth);
+            strokeInfo.Add(depth);
+        }
+    }
+    private void MutateStrokeInfo()
+    {
+        if(strokeInfo.Count >= state.StrokeInfo.Value.Count)
+        {
+            store.Mutate<List<double>>("StrokeInfo",strokeInfo);
+        }
+    }
+    private void MutateDataArray()
+    {
+        if(dataArray.Count >= state.DataArray.Value.Count)
+        {
+            store.Mutate<List<string[]>>("DataArray",dataArray);
+        }
+    }
     private void PopulateHeaders(string[] values)
     {
         int index = 0;
+        Dictionary<int, string> headerIndexDict = new Dictionary<int, string> ();//index is key, result is value
         foreach (string value in values)
         {
             if(!string.IsNullOrWhiteSpace(value))
@@ -329,31 +547,40 @@
             }
             index++;
         }
+        store.Mutate<Dictionary<int, string>>("HeaderIndexDict",headerIndexDict);
     }
     private void PopulateHeaderUnits(string[] values)
     {
         int index = 0;
+        Dictionary<int, string> headerUnitDict = new Dictionary<int, string>();//key is header inder, value is unit
         foreach (string value in values)
         {
-            if(!string.IsNullOrWhiteSpace(value) && headerIndexDict.ContainsKey(index))
+            if(!string.IsNullOrWhiteSpace(value) && state.HeaderIndexDict.Value.ContainsKey(index))
             {
                 headerUnitDict.Add(index,value);
             }
             index++;
         }
+        store.Mutate<Dictionary<int, string>>("HeaderUnitDict",headerUnitDict);
     }
     private void ClearAll()
     {
-        headerIndexDict = new();
-        headerUnitDict = new();
-        dataArray = new();
-        headerArray = new();
-        ClearChat();
+        ClearChart();
         iconMsg = "";
-        isDataLoaded = false;
+        store.Mutate<Dictionary<int, string>>("HeaderUnitDict",new());
+        store.Mutate<Dictionary<int, string>>("HeaderIndexDict",new());
+        store.Mutate<List<double>>("StrokeInfo",new());
+        store.Mutate<List<string[]>>("HeaderArray",new());
+        store.Mutate<List<string[]>>("DataArray",new());
+        store.Mutate<bool>("IsDataLoaded",false);
+        store.Mutate<string>("Data2Show","");
         isFiltered = false;
+        strokeInfo = new();
+        project = new();
+        dataArray = new();
+        //Console.WriteLine($"from clear all / index: {state.HeaderIndexDict.Value.Count()}, unit: {state.HeaderUnitDict.Value.Count} data array : {dataArray.Count}");
     }
-    private void ClearChat()
+    private void ClearChart()
     {
         if(chartRef != null)
         {
@@ -363,17 +590,17 @@
     private async Task ShowFileDialog(bool isNewData)
     {
         await jSRuntime.InvokeVoidAsync("showFileDialog");
-        isNewDataClicked = isNewData;
+        store.Mutate<bool>("IsNewDataClicked",isNewData);
         if(isNewData)
         {
             ClearAll();
             msgClass = "black";
         }
-        else if(!isNewData && isDataLoaded)
+        else if(!isNewData && state.IsDataLoaded.Value && dataArray.Count > 0)
         {
             lastDataArray = dataArray[dataArray.Count - 1];
         }
-        else if(!isNewData && !isDataLoaded)
+        else if(!isNewData && !state.IsDataLoaded.Value)
         {
             iconMsg = "Kindly click on New to start a new project";
             msgClass = "red";

@@ -45,4 +45,14 @@ else
     {
         forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
     }
+
+    Dictionary<int, List<int>> columns = new()
+{
+    { 0, new List<int>() { 1, 1, 1, 1, 1 } },
+    { 1, new List<int>() { 2, 2, 2, 2, 2 } },
+    { 2, new List<int>() { 3, 3, 3, 3, 3 } },
+    { 4, new List<int>() { 4, 4, 4, 4, 4 } },
+};
+
+
 }

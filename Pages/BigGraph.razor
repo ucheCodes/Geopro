@@ -1,11 +1,17 @@
-﻿    <div class="col-2">
-        @if(isRender)
-        {
-            <BlazorPlotView Model="@coneModel" Width="400" Height="650" />
-            <BlazorPlotView Model="@sleeveModel" Width="400" Height="650" />
-            <BlazorPlotView Model="@poreModel" Width="400" Height="650" />
-        }
-    </div>
+﻿ @inject NavigationManager navigationManager
+@inject IJSRuntime jSRuntime
+@inject IStore store
+@inject State state
+
+<div class="col-2" id="chart2">
+    @if(isRender && state.Data2Show.Value != "")
+    {
+        <BlazorPlotView Model="@strokeModel" Width="150" Height="650" /> 
+        <BlazorPlotView Model="@coneModel" Width="350" Height="650" />
+        <BlazorPlotView Model="@sleeveModel" Width="350" Height="650" />
+        <BlazorPlotView Model="@poreModel" Width="350" Height="650" />
+    }
+</div>
 
 @code {
     [Parameter]
@@ -13,7 +19,7 @@
     [Parameter]
     public List<string[]> dataArray {get; set;} = new();
     [Parameter]
-    public string data2show {get; set;} = "";
+    public List<double> strokeInfo {get; set;} = new();
     [Parameter]
     public Dictionary<int, string> headerIndexDict {get;set;} = new();
     [Parameter]
@@ -23,6 +29,7 @@
     public PlotModel coneModel = new PlotModel();
     public PlotModel sleeveModel = new PlotModel();
     public PlotModel poreModel = new PlotModel(); 
+    public PlotModel strokeModel = new PlotModel(); 
     LinearAxis coneXAxis = new LinearAxis();
     LinearAxis coneYAxis = new LinearAxis();
     LineSeries coneSeries = new LineSeries();
@@ -32,6 +39,9 @@
     LinearAxis poreXAxis = new LinearAxis();
     LinearAxis poreYAxis = new LinearAxis();
     LineSeries poreSeries = new LineSeries();
+    LinearAxis strokeXAxis = new LinearAxis();
+    LinearAxis strokeYAxis = new LinearAxis();
+    LineSeries strokeSeries = new LineSeries();
 
 
     protected override void OnInitialized()
@@ -40,15 +50,23 @@
     }
     protected override void OnAfterRender(bool firstRender)
     {
-        if(data2show == "raw")
+        if(state.Data2Show.Value == "raw")
         {
              ViewRawData();
         }
-        else if(data2show == "filtered" && filteredRawDataInRowsArray.Count > 0 && filteredRawDataInColumnsDict.Count() > 0)
+        else if(state.Data2Show.Value == "filtered" && filteredRawDataInRowsArray.Count > 0 && filteredRawDataInColumnsDict.Count() > 0)
         {
              ViewFilteredData(filteredRawDataInRowsArray, filteredRawDataInColumnsDict);
         }
-        //Console.WriteLine($"{data2show} {filteredRawDataInRowsArray.Count} {filteredRawDataInColumnsDict.Count()} {dataArray.Count}");
+    }
+    private async void Screenshot()
+    {
+        if(isRender && state.Data2Show.Value != "")
+        {
+            await jSRuntime.InvokeVoidAsync("screenShot","chart1");
+            navigationManager.NavigateTo("/output");
+        }
+        //Console.Write(state.Data2Show.Value);
     }
     public void ViewRawData()
     {
@@ -65,7 +83,7 @@
                     if(double.TryParse(xDepth, out depth) && double.TryParse(item, out value))
                     {
                         var x = value; var y = depth;
-                        if(index != 0 && headerIndexDict.ContainsKey(index))
+                        if(index != 0 && state.HeaderIndexDict.Value.ContainsKey(index))
                         {
                             if(index == 1)
                             {
@@ -84,6 +102,11 @@
                     index++;
                 }
             }
+            PlotStrokeInfo();
+        }
+        else{
+            //coneModel = new PlotModel();
+            //Console.WriteLine("not plotting, data array is 0000");
         }
     }
     public void ViewFilteredData(List<double[]> filteredRow, Dictionary<int, List<double>> filteredCol)
@@ -103,9 +126,22 @@
                 sleeveSeries.Points.Add(new DataPoint(sf[i],depth[i]));
                 poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
             }
+            PlotStrokeInfo();
         }
     }
-
+    private void PlotStrokeInfo()
+    {
+        if(strokeInfo.Count > 0)
+        {
+            foreach (double y in strokeInfo)
+            {
+                strokeSeries = new(){StrokeThickness = 3};
+                strokeSeries.Points.Add(new DataPoint(0, y));
+                strokeSeries.Points.Add(new DataPoint(1, y)); 
+                strokeModel.Series.Add(strokeSeries);
+            }
+        }
+    }
     private void InitializePlotModels()
     {
        coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
@@ -153,5 +189,52 @@
             StrokeThickness = 3
         };
         poreModel.Series.Add(poreSeries);
+
+        strokeModel = new PlotModel(){Title = "CPT Stroke"};
+       var strokeXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1, Minimum = 0, Maximum = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Stroke count"};
+       strokeModel.Axes.Add(strokeXAxis);
+       var strokeYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,Minimum = 0, MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       strokeModel.Axes.Add(strokeYAxis);
+       strokeSeries = new LineSeries
+        {
+            Title = "stroke",
+            MarkerType = MarkerType.Square,
+            Color = OxyColors.Black,
+            MarkerSize = 1,
+            StrokeThickness = 2
+        };
     }
+    /*
+            //stroke configurations
+            DataPoint startPoint = new DataPoint(0, y);
+            DataPoint endPoint = new DataPoint(1, y);
+
+            var lineAnnotation = new LineAnnotation
+            {
+                StrokeThickness = 1,
+                Color = OxyColors.Black,
+                Type = LineAnnotationType.Vertical,
+                X = 0, // Position the line at the beginning of the plot area
+                Text = $"y={y}", // Set the identifier text
+                TextColor = OxyColors.Black, // Set the color of the identifier text
+                TextVerticalAlignment = OxyPlot.VerticalAlignment.Bottom, // Align text to the bottom
+                TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right // Align text to the right
+            };
+
+            // Add the line annotation to the plot model
+            strokeModel.Annotations.Add(lineAnnotation);
+
+            strokeSeries = new LineSeries
+            {
+                Title = "stroke",
+                MarkerType = MarkerType.Square,
+                Color = OxyColors.Black,
+                MarkerSize = 1,
+                LineStyle = LineStyle.Solid,
+                StrokeThickness = 3
+            };
+            strokeSeries.Points.Add(startPoint);
+            strokeSeries.Points.Add(endPoint);
+    
+    */
 }
