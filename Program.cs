@@ -13,7 +13,9 @@ builder.Services.AddOxyPlotBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddScoped<DatabaseService>();
 builder.Services.AddScoped<IStore,Store>();
+builder.Services.AddScoped<IFunctions,Functions>();
 builder.Services.AddScoped<State>();
+builder.Services.AddScoped<WriteToFile>();
 
 var app = builder.Build();
 

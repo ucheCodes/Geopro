@@ -3,17 +3,65 @@
 @inject IStore store
 @inject State state
 
+<InputFile type="file" id="image" style="display: none;" OnChange="@LoadFile" accept=".png,.jpg,.jpeg" />
 <div class="col-2" id="chart2">
-    @if(isRender && state.Data2Show.Value != "")
+    @if(state.Project.Value.Info.Title != "")
     {
-        <BlazorPlotView Model="@strokeModel" Width="150" Height="650" /> 
-        <BlazorPlotView Model="@coneModel" Width="350" Height="650" />
-        <BlazorPlotView Model="@sleeveModel" Width="350" Height="650" />
-        <BlazorPlotView Model="@poreModel" Width="350" Height="650" />
+        var info = state.Project.Value.Info;
+        <div class="chart-info">
+            <div class="img">
+                <img @onclick="(() => {ChangeImage(1);})" src="@state.ChartImages.Value.Item1"/>
+            </div>
+            <div class="label">
+                <label class="b1">Project Title: First E & P Geotechnical Investigation at anyala Central and Songhai OML 83 & 85</label>
+                <br><label class="b2">Client: First Exploration and Petroleum and International Resources Limited</label>&nbsp;&nbsp;
+                <label class="b2">Contractor: Gems Global Resources Nigeria Limited</label><br>
+                <label class="b3">Site Name: @info.SiteName</label>&nbsp;&nbsp;
+                <label class="b3">Location: @info.Location</label>
+                <br><label class="b3">E: @info.Easting</label>&nbsp;&nbsp;
+                <label class="b3">N: @info.Northing</label>&nbsp;&nbsp;
+                <label class="b3">Water column depth: @info.WaterDepth m</label>&nbsp;&nbsp;
+                <label class="b3">Depth of Drilling: @info.DepthDrilled m</label>&nbsp;&nbsp;
+                <label class="b3">Borehole Id: @info.TestNumber</label><br>
+                <b class="@msgClass">@msg</b>
+                <br>
+            </div>
+            <div class="img">
+                <img @onclick="(() => {ChangeImage(2);})" src="@state.ChartImages.Value.Item2"/>
+            </div>
+        </div>
+    }
+    @if(isRender && state.Data2Show.Value == "decay")
+    {
+        <BlazorPlotView Model="@poreLogDecayModel" Width="630" Height="320" />
+        <BlazorPlotView Model="@poreRootDecayModel" Width="630" Height="320" />
+        <BlazorPlotView Model="@coneLogDecayModel" Width="630" Height="320" />
+        <BlazorPlotView Model="@coneRootDecayModel" Width="630" Height="320" />
+    }
+    else if(isRender && state.Data2Show.Value == "processed")
+    {
+        <BlazorPlotView Model="@strokeModel" Width="125" Height="650" /> 
+        <BlazorPlotView Model="@coneModel" Width="182" Height="650" />
+        <BlazorPlotView Model="@qtModel" Width="182" Height="650" />
+        <BlazorPlotView Model="@qnetModel" Width="182" Height="650" />
+        <BlazorPlotView Model="@sleeveModel" Width="182" Height="650" />
+        <BlazorPlotView Model="@poreModel" Width="182" Height="650" />
+        <BlazorPlotView Model="@rfModel" Width="182" Height="650" />
+    }
+    else if(isRender && state.Data2Show.Value != "")
+    {
+        <BlazorPlotView Model="@strokeModel" Width="140" Height="650" /> 
+        <BlazorPlotView Model="@coneModel" Width="280" Height="650" />
+        <BlazorPlotView Model="@sleeveModel" Width="280" Height="650" />
+        <BlazorPlotView Model="@poreModel" Width="280" Height="650" />
+        <BlazorPlotView Model="@rfModel" Width="280" Height="650" />
     }
 </div>
 
 @code {
+    string msg = "";
+    int imgId = 0;
+    string msgClass = "";
     [Parameter]
     public bool isRender {get; set;} = false;
     [Parameter]
@@ -30,6 +78,13 @@
     public PlotModel sleeveModel = new PlotModel();
     public PlotModel poreModel = new PlotModel(); 
     public PlotModel strokeModel = new PlotModel(); 
+    public PlotModel rfModel = new PlotModel();
+    public PlotModel qtModel = new PlotModel();
+    public PlotModel qnetModel = new PlotModel(); 
+    public PlotModel poreLogDecayModel = new PlotModel();
+    public PlotModel poreRootDecayModel = new PlotModel();  
+    public PlotModel coneLogDecayModel = new PlotModel();
+    public PlotModel coneRootDecayModel = new PlotModel(); 
     LinearAxis coneXAxis = new LinearAxis();
     LinearAxis coneYAxis = new LinearAxis();
     LineSeries coneSeries = new LineSeries();
@@ -39,14 +94,23 @@
     LinearAxis poreXAxis = new LinearAxis();
     LinearAxis poreYAxis = new LinearAxis();
     LineSeries poreSeries = new LineSeries();
-    LinearAxis strokeXAxis = new LinearAxis();
     LinearAxis strokeYAxis = new LinearAxis();
     LineSeries strokeSeries = new LineSeries();
+    LinearAxis rfXAxis = new LinearAxis();
+    LinearAxis rfYAxis = new LinearAxis();
+    LineSeries rfSeries = new LineSeries();
+    LineSeries poreLogSeries = new LineSeries();
+    LineSeries poreRootSeries = new LineSeries();
+    LineSeries coneLogSeries = new LineSeries();
+    LineSeries coneRootSeries = new LineSeries();
+    LineSeries qtSeries = new LineSeries();
+    LineSeries qnetSeries = new LineSeries();
 
 
     protected override void OnInitialized()
     {
         InitializePlotModels();
+        InitializeDynamicPlotModels();
     }
     protected override void OnAfterRender(bool firstRender)
     {
@@ -58,6 +122,14 @@
         {
              ViewFilteredData(filteredRawDataInRowsArray, filteredRawDataInColumnsDict);
         }
+        else if(state.Data2Show.Value == "decay")
+        {
+             ViewDataDecay(state.DataArray.Value);
+        }
+        else if(state.Data2Show.Value == "processed")
+        {
+             ViewProcessedData();
+        }
     }
     private async void Screenshot()
     {
@@ -66,7 +138,6 @@
             await jSRuntime.InvokeVoidAsync("screenShot","chart1");
             navigationManager.NavigateTo("/output");
         }
-        //Console.Write(state.Data2Show.Value);
     }
     public void ViewRawData()
     {
@@ -75,7 +146,9 @@
             InitializePlotModels();
             foreach(var row in dataArray)
             {
-                int index = 0;               
+                int index = 0; 
+                double qc = 0;
+                double fs = 0;                
                 foreach(var item in row)
                 {
                     string xDepth = row[0];
@@ -87,11 +160,15 @@
                         {
                             if(index == 1)
                             {
+                                qc = x;
                                 coneSeries.Points.Add(new DataPoint(x,y));
                             }
                             else if(index == 2)
                             {
+                                fs = x;
+                                double rf = fs/qc;
                                 sleeveSeries.Points.Add(new DataPoint(x,y));
+                                rfSeries.Points.Add(new DataPoint(rf,y));
                             }
                             else if(index == 3)
                             {
@@ -104,9 +181,41 @@
             }
             PlotStrokeInfo();
         }
-        else{
-            //coneModel = new PlotModel();
-            //Console.WriteLine("not plotting, data array is 0000");
+    }
+    public void ViewDataDecay(List<string[]> _dataArray)
+    {
+        if(_dataArray.Count > 0)
+        {
+            InitializeDynamicPlotModels();
+            dataArray = _dataArray;
+            foreach(var row in _dataArray)
+            {
+                int index = 0; 
+                string rawTime = row[row.Length - 1];            
+                foreach(var item in row)
+                {
+                    double value = 0; double timeInSeconds = 0;
+                    if(double.TryParse(rawTime, out timeInSeconds) && double.TryParse(item, out value))
+                    {
+                        double xTimeInMinutes = timeInSeconds / 60; 
+                        var yDecay = value;
+                        if(index != 0 && state.HeaderIndexDict.Value.ContainsKey(index))
+                        {
+                            if(index == 1)//tip resistance decay
+                            {
+                                coneLogSeries.Points.Add(new DataPoint(Math.Log10(xTimeInMinutes),yDecay));
+                                coneRootSeries.Points.Add(new DataPoint(Math.Sqrt(xTimeInMinutes),yDecay));
+                            }
+                            else if(index == 3)//pore presure decay
+                            {
+                                poreLogSeries.Points.Add(new DataPoint(Math.Log10(xTimeInMinutes),yDecay));
+                                poreRootSeries.Points.Add(new DataPoint(Math.Sqrt(xTimeInMinutes),yDecay));
+                            }
+                        }
+                    }
+                    index++;
+                }
+            }
         }
     }
     public void ViewFilteredData(List<double[]> filteredRow, Dictionary<int, List<double>> filteredCol)
@@ -122,9 +231,38 @@
 
             for(int i = 0; i < coneR.Count; i++)
             {
+                double rf = sf[i] / coneR[i];
                 coneSeries.Points.Add(new DataPoint(coneR[i],depth[i]));
                 sleeveSeries.Points.Add(new DataPoint(sf[i],depth[i]));
                 poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
+                rfSeries.Points.Add(new DataPoint(rf,depth[i]));
+            }
+            PlotStrokeInfo();
+        }
+    }
+    public void ViewProcessedData()
+    {
+        var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
+        if(computedCol.Count() >= 14)
+        {
+            InitializePlotModels();
+            List<double> depth = computedCol[0];
+            List<double> qc= computedCol[1];
+            List<double> qt = computedCol[10];
+            List<double> qnet = computedCol[11];
+            List<double> Qt = computedCol[12];
+            List<double> rf = computedCol[13]; 
+            List<double> bq = computedCol[14]; 
+
+            depth = depth.Where(d => d > 0).ToList<double>();
+            for(int i = 0; i < depth.Count; i++)
+            {
+                coneSeries.Points.Add(new DataPoint(qc[i],depth[i]));
+                qtSeries.Points.Add(new DataPoint(qt[i],depth[i]));
+                qnetSeries.Points.Add(new DataPoint(qnet[i],depth[i]));
+                sleeveSeries.Points.Add(new DataPoint(Qt[i],depth[i]));
+                rfSeries.Points.Add(new DataPoint(rf[i],depth[i]));
+                poreSeries.Points.Add(new DataPoint(bq[i],depth[i]));
             }
             PlotStrokeInfo();
         }
@@ -135,6 +273,7 @@
         {
             foreach (double y in strokeInfo)
             {
+                strokeYAxis.Maximum = y + 0.03;
                 strokeSeries = new(){StrokeThickness = 3};
                 strokeSeries.Points.Add(new DataPoint(0, y));
                 strokeSeries.Points.Add(new DataPoint(1, y)); 
@@ -142,13 +281,69 @@
             }
         }
     }
+    private void InitializeDynamicPlotModels()
+    {
+        var pldm = ChartInitializer.Init("Pore Pressure Decay",true,false,0,1,0,1,"Log Time (mins)","Pore Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkRed);
+        poreLogDecayModel = pldm.Item1; poreLogSeries = pldm.Item2;
+        var prdm = ChartInitializer.Init("Pore Pressure Decay",false,false,0,1,0,1,"Root Time (mins ^ 0.5)","Pore Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkBlue);
+        poreRootDecayModel = prdm.Item1;poreRootSeries = prdm.Item2;
+        var cldm = ChartInitializer.Init("Tip Resistance Decay",true,false,0,1,0,1,"Log Time (mins)","Tip Resistance(MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkGoldenrod);
+        coneLogDecayModel = cldm.Item1; coneLogSeries = cldm.Item2;
+        var crdm = ChartInitializer.Init("Tip Resistance Decay",false,false,0,1,0,1,"Root Time (mins ^ 0.5)","Tip Resistance Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkGreen);
+        coneRootDecayModel = crdm.Item1; coneRootSeries = crdm.Item2;
+    }
     private void InitializePlotModels()
+    {
+        if(state.Data2Show.Value == "processed")
+        {
+            var cm = ChartInitializer.Init("qc (MPa)",false,false,0,1,1,0,"qc (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
+            coneModel = cm.Item1; coneSeries = cm.Item2;
+            var qtm = ChartInitializer.Init("qt (MPa)",false,false,0,1,1,0,"qt (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
+            qtModel = qtm.Item1; qtSeries = qtm.Item2;
+            var qnm = ChartInitializer.Init("qnet (MPa)",false,false,0,1,1,0,"qnet (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGoldenrod);
+            qnetModel = qnm.Item1; qnetSeries = qnm.Item2;
+            var sm = ChartInitializer.Init("Qt (MPa)",false,false,0,1,1,0,"Qt (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.Orange);
+            sleeveModel = sm.Item1; sleeveSeries = sm.Item2;
+            var pm = ChartInitializer.Init("Bq",false,false,0,1,1,0,"Bq","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
+            poreModel = pm.Item1; poreSeries = pm.Item2;
+            var rfm = ChartInitializer.Init("Rf (%)",false,false,0,1,1,0,"Rf (%)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkBlue);
+            rfModel = rfm.Item1; rfSeries = rfm.Item2;
+        }
+        else
+        {
+            var cm = ChartInitializer.Init("Tip Resistance,MPa",false,false,0,1,1,0,"qc (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
+            coneModel = cm.Item1; coneSeries = cm.Item2;
+            var sm = ChartInitializer.Init("Sleeve Friction,MPa",false,false,0,1,1,0,"Fs (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
+            sleeveModel = sm.Item1; sleeveSeries = sm.Item2;
+            var pm = ChartInitializer.Init("Pore Pressure,MPa",false,false,0,1,1,0,"u2 (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
+            poreModel = pm.Item1; poreSeries = pm.Item2;
+            var rfm = ChartInitializer.Init("Friction Ratio (%)",false,false,0,1,1,0,"Rf (%)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkBlue);
+            rfModel = rfm.Item1; rfSeries = rfm.Item2;
+        }
+
+        //initializing stroke
+       strokeModel = new PlotModel(){Title = "CPT Stroke"};
+       var strokeXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1, Minimum = 0, Maximum = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Stroke count"};
+       strokeModel.Axes.Add(strokeXAxis);
+       strokeYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,Minimum = 0, MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (m)"};
+       strokeModel.Axes.Add(strokeYAxis);
+       strokeSeries = new LineSeries
+        {
+            Title = "stroke",
+            MarkerType = MarkerType.Square,
+            Color = OxyColors.Black,
+            MarkerSize = 1,
+            StrokeThickness = 2
+        };
+    }
+    private void InitializePlotModelsObsolete()
     {
        coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
        sleeveModel = new PlotModel { Title = "Sleeve Friction,MPa"};
        poreModel = new PlotModel { Title = "Pore Pressure,MPa"};
+       rfModel = new PlotModel { Title = "Friction Ratio (%)"};
 
-       coneXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+       coneXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "qc (MPa)"};
        coneModel.Axes.Add(coneXAxis);
        var coneYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
        coneModel.Axes.Add(coneYAxis);
@@ -162,7 +357,7 @@
         };
         coneModel.Series.Add(coneSeries);
 
-        sleeveXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+        sleeveXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Fs (MPa)"};
         sleeveModel.Axes.Add(sleeveXAxis);
         sleeveYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
         sleeveModel.Axes.Add(sleeveYAxis);
@@ -176,7 +371,7 @@
         };
         sleeveModel.Series.Add(sleeveSeries);
 
-       poreXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Penetration (MPa)"};
+       poreXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "u2(MPa)"};
        poreModel.Axes.Add(poreXAxis);
        poreYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
        poreModel.Axes.Add(poreYAxis);
@@ -184,11 +379,25 @@
         {
             Title = "pore pressure",
             MarkerType = MarkerType.Circle,
-            Color = OxyColor.Parse("#00FF00"),
+            Color = OxyColors.DarkGreen,//.Parse("#00FF00"),
             MarkerSize = 1,
             StrokeThickness = 3
         };
         poreModel.Series.Add(poreSeries);
+
+       rfXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Rf (%)"};
+       rfModel.Axes.Add(rfXAxis);
+       rfYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       rfModel.Axes.Add(rfYAxis);
+       rfSeries = new LineSeries
+        {
+            Title = "Friction Ratio",
+            MarkerType = MarkerType.Circle,
+            Color = OxyColors.DarkBlue,
+            MarkerSize = 1,
+            StrokeThickness = 2
+        };
+        rfModel.Series.Add(rfSeries);
 
         strokeModel = new PlotModel(){Title = "CPT Stroke"};
        var strokeXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1, Minimum = 0, Maximum = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Stroke count"};
@@ -204,37 +413,37 @@
             StrokeThickness = 2
         };
     }
-    /*
-            //stroke configurations
-            DataPoint startPoint = new DataPoint(0, y);
-            DataPoint endPoint = new DataPoint(1, y);
-
-            var lineAnnotation = new LineAnnotation
+    private async void ChangeImage(int id)
+    {
+        imgId = id; msg = ""; msgClass = "";
+        await jSRuntime.InvokeVoidAsync("openImageDialog");
+    }
+    private async void LoadFile(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        try
+        {
+            using(var memoryStream = new MemoryStream())
             {
-                StrokeThickness = 1,
-                Color = OxyColors.Black,
-                Type = LineAnnotationType.Vertical,
-                X = 0, // Position the line at the beginning of the plot area
-                Text = $"y={y}", // Set the identifier text
-                TextColor = OxyColors.Black, // Set the color of the identifier text
-                TextVerticalAlignment = OxyPlot.VerticalAlignment.Bottom, // Align text to the bottom
-                TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Right // Align text to the right
-            };
-
-            // Add the line annotation to the plot model
-            strokeModel.Annotations.Add(lineAnnotation);
-
-            strokeSeries = new LineSeries
-            {
-                Title = "stroke",
-                MarkerType = MarkerType.Square,
-                Color = OxyColors.Black,
-                MarkerSize = 1,
-                LineStyle = LineStyle.Solid,
-                StrokeThickness = 3
-            };
-            strokeSeries.Points.Add(startPoint);
-            strokeSeries.Points.Add(endPoint);
-    
-    */
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+                var array = memoryStream.ToArray();
+                var imgData = "data:image/png;base64,"+Convert.ToBase64String(array);
+                var tupleImg = state.ChartImages.Value;
+                if(imgId == 1)
+                {
+                    store.Mutate<Tuple<string,string>>("ChartImages", new (imgData,tupleImg.Item2));
+                }
+                else if(imgId == 2)
+                {
+                    store.Mutate<Tuple<string,string>>("ChartImages", new (tupleImg.Item1, imgData));
+                }
+                StateHasChanged();
+            }
+        }
+        catch(Exception er)
+        {
+            msg = er.Message.ToString();
+            msgClass = "red";
+        }
+    }
 }

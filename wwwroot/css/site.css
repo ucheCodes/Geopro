@@ -49,12 +49,12 @@
   
 .col-1{
     background-color: darkgray;
-    flex: 0 0 50%;
+    flex: 0 0 45%;
     overflow: auto;
 }
 .col-2{
     background-color: lightgrey;
-    flex: 0 0 50%;
+    flex: 0 0 55%;
     overflow: auto;
 }
 .icons{
@@ -97,6 +97,42 @@
 .red{
   color: maroon;
 }
+.green{
+  color: green;
+}
+.chart-info{
+  width: 100%;
+  height: 85px;
+  margin-bottom: 30px;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+.chart-info .label{
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: 700;
+  padding: .05px 0;
+}
+.chart-info .b1{
+  font-size: 16px;
+}
+.chart-info .b2{
+  font-size: 14px;
+}
+.chart-info .b3{
+  font-size: 13px;
+}
+.chart-info .img{
+  width: 80px;
+  height: 65px;
+  margin: 5px;
+  /* padding: 10px; */
+}
+img{
+  width: 100%;
+  height: 100%;
+}
 .graph,.big-table, .projects{
   width: 100%;
   height: 100vh;
@@ -130,6 +166,9 @@
   font-size: 1.8rem;
   cursor: pointer;
 }
+.graph .x.active, .graph .camera.active{
+  top: 85px;
+}
 .x{
   font-size: 1.6rem;
   position: absolute;
@@ -143,15 +182,25 @@
 }
 
 /*save dialog*/
-.dialog-body{
+.pro-dialog{
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%,-50%);
   display: none;
 }
-.dialog-body.active{
+.pro-dialog.active{
   display: block;
+}
+.pro-dialog .x{
+  z-index: 2;
+}
+
+.dialog-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #555;
 }
 .dialog-box {
   display: flex;
@@ -159,21 +208,20 @@
   align-items: center;
   flex-direction: column;
   background-color: lightgray;
-  width: 450px;
+  width: 500px;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(8, 7, 7, 0.1);
   position: relative;
-  z-index: 4;
 }
 
 .input-group {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   width: 100%;
-  padding: 5px;
+  padding: 10px;
 }
 
-.input-group input[type="text"],#textarea {
+.input-group input[type="text"],select, .input-group input[type="number"],#textarea {
   width: 100%;
   padding: 10px;
   border: 1px solid #ccc;

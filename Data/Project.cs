@@ -15,5 +15,6 @@ public class Project
     public Dictionary<int, string> HeaderIndexDict { get;set;} = new();
     public Dictionary<int, string> HeaderUnitDict {get;set;} = new();
     public bool IsFiltered {get;set;} = false;
+    public bool SetProjectToState { get; set; } = true;
     public ProjectInfo Info { get; set; } = new();
 }

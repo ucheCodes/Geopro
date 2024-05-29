@@ -1,89 +1,9 @@
 ﻿@page "/counter"
 @inject DatabaseService database
 
-@if(isDataExist)
-{
-    <div class="dynamic-table">
-    <div class="table-header">
-        <h3 class="heading">CPT Raw Data</h3>
-        <bold>12,345 data points</bold>
-    </div>
-        <div class="table large">
-        <div class="table-body">
-            <table>
-                <thead>
-                    <tr>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                        <tr>
-                            <td></td>
-                        </tr>
-                </tbody>
-            </table>
+        <div class="img">
+            <img src="./img/gems.jpg"/>
         </div>
-    </div>
-</div>
-}
-
 @code{
-    bool isDataExist = false;
-    protected override void OnInitialized()
-    {
-        Test();
-    }
-    private void Test()
-    {
-       /*
-       bool isCreated = false;
-        for(var i = 0; i < 11; i++)
-        {
-            //CREATE CODES
-            string key = JsonConvert.SerializeObject(i.ToString());
-            string value = JsonConvert.SerializeObject(i * 100).ToString();
-            isCreated = database.Create("Numbers",key,value);
-        }
-        Console.WriteLine($"Hello, I have been clicked! {isCreated}"); 
-        */
 
-        /*
-        //READ CODES
-        for(var i = 0; i < 11; i++)
-        {
-            var data = database.Read("Numbers", i.ToString());
-            Console.WriteLine($"key : {data.Key} - value : {data.Value}");
-        }
-        //Console.WriteLine(key);
-        */
-
-        /* 
-        //EXISTS CODES
-        bool data = database.Exists("Numbers", "5");
-        Console.WriteLine($"is exist {data}  ready for read all"); 
-        */
-
-        /*
-        //DELETE CODES
-        bool data = database.Delete("Numbers", "5");
-        Console.WriteLine($"is deleted {data}");       
-        */
-
-        ///*
-        //DELETE ALL CODES
-        bool data = database.DeleteAll("Numbers", true);
-        Console.WriteLine($"is deleted {data}");  
-        //*/
-
-        //*
-        //READALL CODES
-        var data2 = database.ReadAll("Numbers");
-        foreach(var d in data2){
-            var msg = $" {d.Key}/{d.Value} ";
-            Console.WriteLine(msg);
-        }
-        Console.WriteLine($"{data2.Count()} - data ");
-        //*/
-
-        }
 }

@@ -2,11 +2,13 @@
 @inject DatabaseService database
 @inject NavigationManager navigationManager
 @inject IJSRuntime jSRuntime
+@inject IFunctions functions
 @inject IStore store
 @inject State state
+@inject WriteToFile fileWriter
 
 <InputFile type="file" id="fileInput" style="display: none;"  OnChange="@HandleFileChange" accept=".csv,.txt"/>
-<section @onkeydown="HandleKeyDown" class="container">  
+<section class="container">  
   <div class="menu">
     <ul class="menu-items">
       <li @onclick="(() => ToggleMenu(file))"><i class="@((activeMenu == file) ? "active" : "")">New Project</i></li>
@@ -25,12 +27,13 @@
             </span>
             <span class="icons-group @((activeMenu == edit) ? "active" : "")">
                     <i @onclick="(() => ShowFileDialog(false))"  class="fas fa-folder-open"></i>
-                    <b class="tool-tip">Tool tip message here</b>
+                    <i @onclick="@(() => {showProcessInput = true;})" class="fas fa-book"/>
             </span>
             <span class="icons-group @((activeMenu == process) ? "active" : "")">
                 <i @onclick="ViewRawData"  class="fas fa-table"></i>
                 <i @onclick="ViewFilteredData"  class="fas fa-server"></i>
-                <i class="fas fa-tv"></i>             
+                <i @onclick="ViewDataDecay"  class="fas fa-star"></i>
+                <i @onclick="ViewProcessedData" class="fas fa-tv"></i>             
             </span>
             <span class="icons-group @((activeMenu == view) ? "active" : "")">
                 <i @onclick="(() => {showBigGraph = true;})" class="fas fa-chart-line"></i>
@@ -38,7 +41,7 @@
             </span>
             <span class="icons-group @((activeMenu == save) ? "active" : "")">
                 <i @onclick="Save" class="fas fa-save"></i>
-                <i @onclick="@((e) => {navigationManager.NavigateTo("/writer");})" class="fas fa-edit"></i>
+                <i @onclick="WriteDataToFile" class="fas fa-edit"></i>
                 <i @onclick="@(e =>Screenshot("chart1"))" class="fas fa-camera"></i>
             </span>
         </div>
@@ -49,8 +52,8 @@
   <Chart headerIndexDict="state.HeaderIndexDict.Value"  @ref="chartRef" TableTiltle="@tableTitle" />
   
  <div class="graph @((showBigGraph) ? "active" : "")">
-    <span @onclick="(() => {showBigGraph = false;})" class="red x">X</span> 
-    <span @onclick="@(e =>Screenshot("chart2"))" class="camera"><i class="fas fa-camera-retro"></i></span>
+    <span @onclick="(() => {showBigGraph = false;})" class="red x @((state.Project.Value.Info.Name != "") ? "active" : "")">X</span> 
+    <span @onclick="@(e =>Screenshot("chart2"))" class="camera @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-camera-retro"></i></span>
         <div>
             <BigGraph isRender="showBigGraph" dataArray="dataArray"
              filteredRawDataInColumnsDict="filteredRawDataInColumnsDict"
@@ -65,29 +68,25 @@
             <BigTable  TableTiltle="@tableTitle"  dataArray="dataArray" filteredRawDataInRowsArray ="filteredRawDataInRowsArray" />   
     </div>
 
-    <div class="dialog-body @((showSaveDialog) ? "active" : "")">
-        @if(showSaveDialog)
-        {
-            <div class="dialog-box">
-                <span @onclick="(() => {showSaveDialog = false;})" class="red x">X</span>
-                <SaveDialog ProjectInfo="info" HandleClickEventCalls="ClickedEventCallToSave" />
-            </div>
-        }
-    </div>
-
     <div class="projects @((showProjects) ? "active" : "")">
         <span @onclick="(() => {showProjects = false;})" class="red x">X</span> 
         <ProjectsTable ProjectEventCallBack="ModifySavedProject" /> 
+    </div>
+
+    <div class="pro-dialog @((showProcessInput) ? "active" : "")">
+        <span @onclick="@((e) => {showProcessInput = false;})" class="red x">X</span> 
+        <ProcessInputs ProcessInputsCallback="ProcessInputs"  />
     </div>
 </section>
 
 @code{
     public Chart? chartRef; //@onmouseover="@(e => HandleMouseOverIconsTooltip("Load a new *.csv data file", file))" 
     bool showBigGraph = false;
+    bool showProcessInput = false;
     bool showBigTable = false;
-    bool showSaveDialog = false;
     bool showProjects = false;
     bool isFiltered = false;
+    bool isProcessed = false;
     string iconMsg = "";
     string msgClass = "black";
     private string activeMenu = "file";
@@ -99,8 +98,6 @@
     string tableTitle = "";
 
     string[]? lastDataArray;
-    Project project = new();
-    ProjectInfo info = new();
     List<string[]> dataArray = new List<string[]>();
     List<double[]> filteredRawDataInRowsArray = new List<double[]>();
     List<double> submergedDensityInCol = new List<double>();
@@ -125,7 +122,6 @@
         {
             dataArray = state.DataArray.Value;
             strokeInfo = state.StrokeInfo.Value;
-            //later on, add some conditions for computed cpt values
             if(state.Data2Show.Value == "raw")
             {
                 ViewRawData();
@@ -133,6 +129,14 @@
             else if(state.Data2Show.Value == "filtered")
             {
                 ViewFilteredData();
+            }
+            else if(state.Data2Show.Value == "processed")
+            {
+                ViewProcessedData();
+            }
+            else if(state.Data2Show.Value == "decay")
+            {
+                ViewDataDecay();
             }
             InvokeAsync(StateHasChanged);
         }
@@ -145,29 +149,9 @@
             navigationManager.NavigateTo($"/output");
         }
     }
-    private void Test()
-    {
-        /*var filteredRawDataInRowsArray = FilterRawData(dataArray);
-        Console.WriteLine(filteredRawDataInRowsArray.Count);
-        foreach(var data in filteredRawDataInRowsArray)
-        {
-            foreach(var item in data)
-            {
-                Console.Write($" {item} ");
-            }
-            Console.WriteLine("");
-        } */
-        Console.WriteLine($" sub count : {submergedDensityInCol.Count}");
-        int i = 0;
-        foreach(var item in submergedDensityInCol)
-        {
-            Console.WriteLine($"{i} {item} {soilNatureInCols[i]}");
-            i++;
-        }
-    }
     private void Test2()
     {
-        var filteredRawDataInRowsArray = FilterRawData(dataArray);
+        //var filteredRawDataInRowsArray = FilterRawData(dataArray);
         Console.WriteLine(filteredRawDataInColumnsDict.Count());
         foreach(var data in filteredRawDataInColumnsDict.Values)
         {
@@ -178,6 +162,48 @@
             Console.WriteLine("");
         } 
     }
+    private void WriteDataToFile()
+    {
+            if(state.Data2Show.Value == "raw" && state.HeaderArray.Value.Count > 0 && state.DataArray.Value.Count > 0)
+            {
+                var header = fileWriter.BuildRowsToCSVString(state.HeaderArray.Value);
+                var body = fileWriter.BuildRowsToCSVString(state.DataArray.Value);
+                string data = $"{header}{body}";
+                fileWriter.WriteToCSVFile(data);
+
+            }
+            else if(state.Data2Show.Value == "filtered" && state.HeaderArray.Value.Count > 0 && filteredRawDataInRowsArray.Count > 0)
+            {
+                var header = fileWriter.BuildRowsToCSVString(state.HeaderArray.Value);
+                var body = fileWriter.BuildRowsToCSVString(filteredRawDataInRowsArray);
+                string data = $"{header}{body}";
+                fileWriter.WriteToCSVFile(data);
+            }
+            else if(state.Data2Show.Value == "processed" && state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0 && state.HeaderIndexDict.Value.Count() > 0)
+            {
+                string header = ""; string unit = "";string comma = string.Empty;int i = 0;
+                var body = fileWriter.BuildColumnsToCSVString(state.FilteredAndComputedCPTDataInColumnsDict.Value);
+                foreach(var kvp in state.HeaderIndexDict.Value)
+                {
+                    if(i < state.HeaderIndexDict.Value.Count() - 1)
+                    {
+                        comma = ",";//just to maintain uniformity with my file writer csv codes
+                    }
+                    else
+                    {
+                        comma = string.Empty;
+                    }
+                    header += $"{kvp.Value}{comma}"; 
+                    if(!string.IsNullOrWhiteSpace(kvp.Value) && state.HeaderUnitDict.Value.ContainsKey(kvp.Key))
+                    {
+                        unit += $"{state.HeaderUnitDict.Value[kvp.Key]}{comma}";
+                    }
+                    i++;
+                }
+                string data = $"{header}\n{unit}\n{body}";
+                fileWriter.WriteToCSVFile(data);
+            }
+    }
     private void ViewRawData()
     {
        if(chartRef != null && dataArray.Count > 0)
@@ -185,6 +211,21 @@
          store.Mutate<string>("Data2Show","raw");
          tableTitle = "CPT Raw Data";
          chartRef.ViewRawData(dataArray);
+         iconMsg = "";
+       }
+        else
+       {
+            iconMsg = "No data imported ...Kindly, start a new project";
+            msgClass = "red";
+       }
+    }
+    private void ViewDataDecay()
+    {
+       if(chartRef != null && dataArray.Count > 0)
+       {
+         store.Mutate<string>("Data2Show","decay");
+         tableTitle = "CPT Raw Data Decay";
+         chartRef.ViewDataDecay(dataArray);
          iconMsg = "";
        }
         else
@@ -202,14 +243,43 @@
                 filteredRawDataInRowsArray = new();
                 filteredRawDataInRowsArray = FilterRawData(dataArray);
                 chartRef.ViewFilteredData(filteredRawDataInRowsArray,filteredRawDataInColumnsDict);
-                store.Mutate<string>("Data2Show","filtered");
-                tableTitle = "CPT Filtered Data";
                 isFiltered = true;
                 iconMsg = "";
             }
             else
             {
                 chartRef.ViewFilteredData(filteredRawDataInRowsArray,filteredRawDataInColumnsDict);
+            }
+            store.Mutate<string>("Data2Show","filtered");
+            tableTitle = "CPT Filtered Data";
+       }
+       else
+       {
+            iconMsg = "No data imported for processing";
+            msgClass = "red";
+       }
+    }
+    private void ProcessInputs()
+    {
+        showProcessInput = false;
+        isProcessed = false;
+        ViewProcessedData();
+    }
+    private void ViewProcessedData()
+    {
+        if(chartRef != null && dataArray.Count > 0)
+       {
+            if(state.WaterColumnDepth.Value > 0 && state.ConeAreaRatio.Value > 0)
+            {
+                computeProcessedData();
+                iconMsg = "";
+                store.Mutate<string>("Data2Show","processed");
+                tableTitle = "CPT Processed Data";
+                chartRef.ViewProcessedData();
+            }
+            else
+            {
+                showProcessInput = true;
             }
        }
        else
@@ -218,112 +288,165 @@
             msgClass = "red";
        }
     }
+    private void computeProcessedData()
+    {
+        try
+        {
+            if(!isProcessed)
+            {
+                int i = 0; 
+                double u0 = 0;
+                double a = state.ConeAreaRatio.Value;
+                if(!isFiltered)
+                {
+                    filteredRawDataInRowsArray = new();
+                    filteredRawDataInRowsArray = FilterRawData(dataArray);
+                }
+                int dataIndex = filteredRawDataInColumnsDict.Count();
+                ModifyHeadersForProcessed(dataIndex);
+                foreach(var row in filteredRawDataInRowsArray)
+                {
+                    //qt = qc + u2(1 - a)//Robertson and lunne et al. 1986
+                    //qnet = qt - dv0 where dv0 is unit weight of soil samples * depth
+                    //rf = fs / qt  typically 
+                    //Bq = (u2 - u0) / qnet; //assume u0 = 0 
+                    if(row[0] > 0)
+                    {
+                        Tuple<double, double> overburden = functions.ComputeOverburdenPressure(submergedDensityInCol[i],row[0]);
+                        double effectiveOverburden = overburden.Item1;
+                        double totalOverburden = overburden.Item2;
+                        double qt = row[1] + (row[3] * (1 - a));
+                        double qnet = qt - totalOverburden;
+                        double Qt = qnet / effectiveOverburden;
+                        double rf = row[2] / qt;
+                        double bq = (row[3] - u0) / qnet;//find out u0
+                        PopulateRawDataIntoColumns(dataIndex, qt);
+                        PopulateRawDataIntoColumns(dataIndex + 1, qnet);
+                        PopulateRawDataIntoColumns(dataIndex + 2, Qt);
+                        PopulateRawDataIntoColumns(dataIndex + 3, rf);
+                        PopulateRawDataIntoColumns(dataIndex + 4, bq);
+                        PopulateRawDataIntoColumns(dataIndex + 5, effectiveOverburden);
+                        PopulateRawDataIntoColumns(dataIndex + 6, totalOverburden);
+                        i++;
+                    }
+                }
+                store.Mutate<Dictionary<int, List<double>>>("FilteredAndComputedCPTDataInColumnsDict",filteredRawDataInColumnsDict);
+                isProcessed = true;
+            }
+        }
+        catch(Exception e)
+        {
+            iconMsg = e.Message.ToString();
+            msgClass = "red";
+            Console.WriteLine($"{e.Message}");
+        }
+    }
+    private void ModifyHeadersForProcessed(int dataIndex)
+    {
+        var headerIndexDict = state.HeaderIndexDict.Value;
+        var headerUnitDict = state.HeaderUnitDict.Value;
+        if(!headerIndexDict.ContainsKey(dataIndex) && !headerUnitDict.ContainsKey(dataIndex))
+        {
+            //use this to populate the calculated data. No need for header Array
+            headerIndexDict.Add(dataIndex,"qt");
+            headerIndexDict.Add(dataIndex + 1,"qnet");
+            headerIndexDict.Add(dataIndex + 2,"Qt");
+            headerIndexDict.Add(dataIndex + 3,"Rf");
+            headerIndexDict.Add(dataIndex + 4,"bq");
+            headerIndexDict.Add(dataIndex + 5,"Effective Overburden");
+            headerIndexDict.Add(dataIndex + 6,"Total Overburden");
+            //units
+            headerUnitDict.Add(dataIndex,"MPa");
+            headerUnitDict.Add(dataIndex + 1,"MPa");
+            headerUnitDict.Add(dataIndex + 2,"MPa");
+            headerUnitDict.Add(dataIndex + 3,"%");
+            headerUnitDict.Add(dataIndex + 4," ");
+            headerUnitDict.Add(dataIndex + 5,"MPa");
+            headerUnitDict.Add(dataIndex + 6,"MPa");
+            store.Mutate<Dictionary<int, string>>("HeaderIndexDict",headerIndexDict);
+            store.Mutate<Dictionary<int, string>>("HeaderUnitDict",headerUnitDict);
+        }
+    }
 
-    private void HandleMouseOverIconsTooltip(string message, string menu)
-    {
-        if(activeMenu == menu)
-        {
-            iconMsg = message;
-        }
-    }
-    private void HandleMouseOutIcon()
-    {
-        iconMsg = "";
-    }
-    private void HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.CtrlKey && e.Key == "s")
-        {
-            Console.WriteLine("saving ...");
-            //e.PreventDefault(); 
-            Save();
-        }
-        else{
-            //Console.WriteLine($"{e.Key} was pressed down");
-        }
-    }
     private void ModifySavedProject(Tuple<string,Project> tupleData)
     {
         string operation = tupleData.Item1;
-        Project _project = tupleData.Item2;
+        Project project = tupleData.Item2;
         if(operation == "edit")
         {
-            info = _project.Info;
-            showSaveDialog = true;
+            project.SetProjectToState = false;
+            store.Mutate<Project>("SaveProjectParameter", project);
+            navigationManager.NavigateTo("/save");
         }
         else if(operation == "delete")
         {
-            bool isDel = database.Delete("Projects", _project.Id);
-            if(isDel)
-            {
-                iconMsg = "Project deleted successfully";
-                showProjects = false;
-                msgClass = "red";
-            }
+            iconMsg = "Project deleted successfully";
+            msgClass = "red";
+        }
+        else if(operation == "delete failed")
+        {
+            iconMsg = "project failed to delete!!!";
+            msgClass = "red";
         }
         else if(operation == "view")
         {
-            LoadSavedProject(_project);
+            LoadSavedProject(project);
         }
         showProjects = false;
         InvokeAsync(StateHasChanged);
     }
-    private void ClickedEventCallToSave(ProjectInfo info)
+    private Project PopulateProject()
     {
-        string id = Guid.NewGuid().ToString();//Modify to accommodate project edit
-        SaveProject(id, info);
+        var _project = new Project()
+        {
+            DataArray = dataArray,
+            FilteredRawDataInRowsArray = filteredRawDataInRowsArray,
+            TableTitle = tableTitle, 
+            HeaderArray = state.HeaderArray.Value,
+            SubmergedDensityInCol = submergedDensityInCol,
+            SoilNatureInCols = soilNatureInCols,
+            StrokeInfo = strokeInfo,
+            FilteredRawDataInColumnsDict = filteredRawDataInColumnsDict,
+            HeaderIndexDict = state.HeaderIndexDict.Value,
+            HeaderUnitDict = state.HeaderUnitDict.Value,
+            IsFiltered = isFiltered
+        };//Include var for processed and computed data
+        if(lastDataArray != null)
+        {
+            _project.LastDataArray = lastDataArray;
+        }          
+        return _project;
     }
-    private void SaveProject(string id, ProjectInfo info)
-    {//If I fix render issues, modify this code to accommodate edit
+    private void Save()
+    {
         if(state.IsDataLoaded.Value && dataArray.Count > 0)
         {
-            var _project = new Project()
+            var project = PopulateProject();
+            if(state.Project.Value.Id == "" )
             {
-                DataArray = dataArray,
-                Id = id,
-                FilteredRawDataInRowsArray = filteredRawDataInRowsArray,
-                TableTitle = tableTitle, 
-                HeaderArray = state.HeaderArray.Value,
-                SubmergedDensityInCol = submergedDensityInCol,
-                SoilNatureInCols = soilNatureInCols,
-                StrokeInfo = strokeInfo,
-                FilteredRawDataInColumnsDict = filteredRawDataInColumnsDict,
-                HeaderIndexDict = state.HeaderIndexDict.Value,
-                HeaderUnitDict = state.HeaderUnitDict.Value,
-                IsFiltered = isFiltered,
-                Info = info
-            };//Include var for processed and computed data
-            if(lastDataArray != null)
-            {
-                project.LastDataArray = lastDataArray;
+                string id = Guid.NewGuid().ToString();
+                project.Id = id;
+                project.SetProjectToState = true;
+                store.Mutate<Project>("SaveProjectParameter",project);
+                navigationManager.NavigateTo("/save");           
             }
-            string key = JsonConvert.SerializeObject(_project.Id);
-            string value = JsonConvert.SerializeObject(_project);
-            bool isCreated = database.Create("Projects",key,value);
-            if(isCreated)
+            else if(state.Project.Value.Id != "")
             {
-                iconMsg = "Project progress saved!!!";
-                msgClass = "green";
-                project = _project;
-                showSaveDialog = false;
+                project.Id = state.Project.Value.Id;
+                project.Info = state.Project.Value.Info;
+                bool isCreated = functions.SaveProject(project);
+                if(isCreated)
+                {
+                    iconMsg = "Project progress saved!!!";
+                    msgClass = "green";
+                    store.Mutate<Project>("Project",project);
+                 }
             }
         }
         else
         {
-            iconMsg = "Empty project cannot be saved, kindly start a new project";
-            msgClass = "red";
-        } 
-    }
-    private void Save()
-    {
-        //When keyboard save event listens, just call this function
-        if(project.Id == "" )
-        {
-            showSaveDialog = true;
-        }
-        else if(project.Id != "")
-        {
-           SaveProject(project.Id, project.Info);
+            iconMsg = "Empty project cannot be saved!!!";
+            msgClass = "red";      
         }
     }
     private void LoadSavedProject(Project p)
@@ -344,12 +467,12 @@
             soilNatureInCols = p.SoilNatureInCols;
             strokeInfo = p.StrokeInfo;
             filteredRawDataInColumnsDict = p.FilteredRawDataInColumnsDict;
-            isFiltered = p.IsFiltered;
-            project = p;
+            isFiltered = p.IsFiltered;//include isProcessed
+            store.Mutate<Project>("Project",p);
             ViewRawData();
         };
     }
-    private void ModifyDepthValuesAndAppend(string[] values)
+    private void ModifyDepthAndTimeValuesAndAppend(string[] values)
     {
         try
         {
@@ -357,8 +480,11 @@
             {
             string[] newValues = new string[values.Length];
             var lastDepthValue = lastDataArray[0];
-            double parsedLastDepthValue;
+            var lastTimeValue = lastDataArray[values.Length - 1];//last index returns white space 
+            double parsedLastDepthValue;//because of the csv format
             double parsedItemDepthValue;
+            double parsedLastTimeValue;
+            double parsedItemTimeValue;
             int index = 0;
             foreach(var item in values)
             {
@@ -372,6 +498,11 @@
                     else{
                         newValues[0] = "error";
                     }
+                }
+                else if(index == values.Length - 1 && double.TryParse(lastTimeValue, out parsedLastTimeValue) && double.TryParse(item, out parsedItemTimeValue))
+                {//Time is usually the last in the data array 
+                    double newTimeInSeconds = parsedLastTimeValue + parsedItemTimeValue;
+                    newValues[index] = newTimeInSeconds.ToString();//index is values.Length - 1
                 }
                 else
                 {
@@ -390,40 +521,41 @@
     private List<double[]> FilterRawData(List<string[]> rawDataArray)
     {
         filteredRawDataInColumnsDict = new();//Just because I am modifying, create a new instance
-        submergedDensityInCol = new();
-        List<double[]> filteredDataArray = new List<double[]>();
+        submergedDensityInCol = new(); //when getting this from lab, be careful of the units
+        List<double[]> filteredDataArray = new List<double[]>();//from kg / m3 convert to MPa by multiplying (density, g = 9.8 m/s, d) / 1000
         int i = 0;
-        double positiveDepthValue = 0;
+        double penetrationStartDepth = 0;
+        double currentDepth = 0;
         foreach(var dataArr in rawDataArray)
         {
             double index0; double index1;int j = 0;
             double[] filteredRow = new double[dataArr.Length];
-            if(double.TryParse(dataArr[0], out index0) && double.TryParse(dataArr[1], out index1) && index0 >= 0 && index1 > 0)
+            if(double.TryParse(dataArr[0], out index0) && double.TryParse(dataArr[1], out index1) && index0 > 0 && index1 > 0)
             {
                 foreach(var data in dataArr)
                 {
                     double value;
                     if(double.TryParse(data, out value))
                     {
-                        if(i == 0 && j == 0)
+                        if(i >= 0 && j == 0)//j reps the column of data contain depth
                         {
-                            positiveDepthValue = value;
-                            value = 0;
-                        } 
-                        else if(i > 0 && j == 0)
-                        {
-                            var newCalculatedDepth = value - positiveDepthValue;
+                            if(i == 0)//i keeps record of the number of rows of + cone res.
+                            {
+                                penetrationStartDepth = currentDepth;
+                            } 
+                            var newCalculatedDepth = value - penetrationStartDepth;
                             value = Math.Round(newCalculatedDepth, 2);
                         }
-                        filteredRow[j] = value;
-                        PopulateRawDataIntoColumns(j, value);
-                        PopulateSubmergedDensityIntoColumns(j,value);
+                        filteredRow[j] = value;//When writing codes for the zero's,
+                        PopulateRawDataIntoColumns(j, value);//study the codes above and understand it proper
+                        PopulateSubmergedDensityIntoColumns(j,value);//Finally, modify that value for the new zeros modified codes
                         j++;
                     }
                 }
                 i++;
                 filteredDataArray.Add(filteredRow);
             }
+            double.TryParse(dataArr[0], out currentDepth);
         }
         return filteredDataArray;
     }
@@ -431,12 +563,12 @@
     {
         if(resistanceIndex == 1 && resistanceValue > 1.0)//Mpa > 1.0 is typical of sand
         {
-            submergedDensityInCol.Add(9.5);
+            submergedDensityInCol.Add(19.5);
             soilNatureInCols.Add("granular");
         }
         else if(resistanceIndex == 1 && resistanceValue <= 1.0)
         {
-            submergedDensityInCol.Add(6.5);
+            submergedDensityInCol.Add(16.5);
             soilNatureInCols.Add("cohesive");
         }
     }
@@ -467,7 +599,8 @@
                 List<string[]> headerArray = new();
                 while (((line = await reader.ReadLineAsync()) != null!) && !string.IsNullOrWhiteSpace(line))
                 {
-                    string[] values = line.Split(',');
+                    string[] _values = line.Split(',');
+                    string[] values = _values.Where(v => !string.IsNullOrWhiteSpace(v) && !string.IsNullOrEmpty(v)).ToArray();
                     if(lineIndex == 0 && state.IsNewDataClicked.Value)
                     {
                         headerArray.Add(values);
@@ -486,7 +619,7 @@
                             store.Mutate<bool>("IsDataLoaded",true);
                         }
                         else if(!state.IsNewDataClicked.Value && state.IsDataLoaded.Value &&  lineIndex > 1){
-                            ModifyDepthValuesAndAppend(values);
+                            ModifyDepthAndTimeValuesAndAppend(values);
                         }
                         else if(!state.IsNewDataClicked.Value && !state.IsDataLoaded.Value){
                                 break;
@@ -495,6 +628,7 @@
                     lineIndex++;
                 }
                 isFiltered = false;
+                isProcessed = false;
                 GetAndSetStrokeCount();
                 if(headerArray.Count > 0)
                 {
@@ -567,6 +701,7 @@
     {
         ClearChart();
         iconMsg = "";
+        store.Mutate<Project>("Project",new());
         store.Mutate<Dictionary<int, string>>("HeaderUnitDict",new());
         store.Mutate<Dictionary<int, string>>("HeaderIndexDict",new());
         store.Mutate<List<double>>("StrokeInfo",new());
@@ -575,10 +710,9 @@
         store.Mutate<bool>("IsDataLoaded",false);
         store.Mutate<string>("Data2Show","");
         isFiltered = false;
+        isProcessed = false;
         strokeInfo = new();
-        project = new();
         dataArray = new();
-        //Console.WriteLine($"from clear all / index: {state.HeaderIndexDict.Value.Count()}, unit: {state.HeaderUnitDict.Value.Count} data array : {dataArray.Count}");
     }
     private void ClearChart()
     {

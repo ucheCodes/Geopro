@@ -11,21 +11,37 @@
                     <div class="table-body">
                         <table>
                             <thead>
-                                @foreach(var row in state.HeaderArray.Value)
+                                @if(state.Data2Show.Value == "processed" && state.HeaderIndexDict.Value.Count() > 0)
                                 {
                                     <tr>
-                                        @foreach(var data in row)
-                                        {
-                                            if(!string.IsNullOrWhiteSpace(data))
+                                    @foreach(var kvp in state.HeaderIndexDict.Value)
+                                    {
+                                            @if(!string.IsNullOrWhiteSpace(kvp.Value) && state.HeaderUnitDict.Value.ContainsKey(kvp.Key))
                                             {
-                                                <th>@data</th>
+                                                string header = $"{kvp.Value} \n  {state.HeaderUnitDict.Value[kvp.Key]}";
+                                                <th>@header</th>
                                             }
-                                        }
+                                    }
                                     </tr>
+                                }
+                                else
+                                {
+                                    @foreach(var row in state.HeaderArray.Value)
+                                    {
+                                        <tr>
+                                            @foreach(var data in row)
+                                            {
+                                                if(!string.IsNullOrWhiteSpace(data))
+                                                {
+                                                    <th>@data</th>
+                                                }
+                                            }
+                                        </tr>
+                                    }
                                 }
                             </thead>
                             <tbody>
-                                @if(state.Data2Show.Value == "raw" && dataArray.Count > 0)
+                                @if((state.Data2Show.Value == "raw" || state.Data2Show.Value == "decay") && dataArray.Count > 0)
                                 {
                                     foreach(var row in dataArray)
                                 {
@@ -68,6 +84,23 @@
                                         </tr>
                                     }
                                 }
+                                else if(state.Data2Show.Value == "processed" && state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0)
+                                {
+                                    var data = state.FilteredAndComputedCPTDataInColumnsDict.Value;
+                                    int maxDataCount = data.Values.Max(list => list.Count);
+                                    for(int i = 0; i < maxDataCount; i++)
+                                    {
+                                        <tr>
+                                            @foreach(var columnOfData in data.Values)
+                                            {
+                                                if(i < columnOfData.Count)
+                                                {
+                                                    <td>@columnOfData[i]</td>
+                                                }
+                                            }
+                                        </tr>
+                                    }
+                                }
                             </tbody>
                         </table>
                     </div>
@@ -92,6 +125,10 @@
         else if(state.Data2Show.Value == "filtered")
         {
              dataCount = filteredRawDataInRowsArray.Count;
+        }
+        else if(state.Data2Show.Value == "processed")
+        {
+             dataCount = state.FilteredAndComputedCPTDataInColumnsDict.Value.Count;
         }
     }
 }

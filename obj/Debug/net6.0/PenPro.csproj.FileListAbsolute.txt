@@ -24,9 +24,15 @@ C:\Users\user\Codes\PenPro\obj\Debug\net6.0\scopedcss\Shared\MainLayout.razor.rz
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\scopedcss\Shared\NavMenu.razor.rz.scp.css
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\scopedcss\bundle\PenPro.styles.css
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\scopedcss\projectbundle\PenPro.bundle.scp.css
-C:\Users\user\Codes\PenPro\obj\Debug\net6.0\PenPro.csproj.CopyComplete
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\PenPro.dll
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\refint\PenPro.dll
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\PenPro.pdb
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\PenPro.genruntimeconfig.cache
 C:\Users\user\Codes\PenPro\obj\Debug\net6.0\ref\PenPro.dll
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\PenPro.sourcelink.json
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\staticwebassets\msbuild.PenPro.Microsoft.AspNetCore.StaticWebAssets.props
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\staticwebassets\msbuild.build.PenPro.props
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\staticwebassets\msbuild.buildMultiTargeting.PenPro.props
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\staticwebassets\msbuild.buildTransitive.PenPro.props
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\staticwebassets.pack.json
+C:\Users\user\Codes\PenPro\obj\Debug\net6.0\PenPro.csproj.Up2Date

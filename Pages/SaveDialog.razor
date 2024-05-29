@@ -1,12 +1,25 @@
 ﻿@page "/save"
+@inject State state
+@inject IStore store
+@inject IFunctions functions
 @inject NavigationManager navigationManager
+@implements IDisposable
 
+<div class="dialog-body active">
+    <div class="dialog-box">
+        <span @onclick="@((e) => {navigationManager.NavigateTo("/");})"  class="red x">X</span>
         <div>
         <h3>Save Project Progress</h3>
         </div>
-        <span class="red">@msg</span>
+        <span class="@msgClass">@msg</span>
         <div class="input-group">
             <input @bind="name" type="text" placeholder="Data Processor Name" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="contractor" type="text" placeholder="Contractor's Name" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="company" type="text" placeholder="Client's Name" name="input1">
         </div>
         <div class="input-group">
             <input @bind="title" type="text" placeholder="Project Title"  name="input2">
@@ -15,61 +28,125 @@
             <input @bind="location" type="text" placeholder="Project Location"  name="input3">
         </div>
         <div class="input-group">
-            <input @bind="easting" type="text" placeholder="Project Location Easting"  name="input3">
+            <input @bind="siteName" type="text" placeholder="Site Name"  name="input3">
         </div>
         <div class="input-group">
-            <input @bind="northing" type="text" placeholder="Project Location Northing"  name="input3">
+            <input @bind="testNumber" type="text" placeholder="Test number"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="coneId" type="text" placeholder="Cone's Serial number"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="depthDrill" type="number" placeholder="Depth Drilled in meter"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="easting" type="text" placeholder="Borehole positioned Easting"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="northing" type="text" placeholder="Borehole positioned Northing"  name="input3">
         </div>
         <div class="input-group">
             <textarea @bind="description" id="textarea" placeholder="Project Description"  name="textarea"></textarea>
         </div>
+        <label class="@msgClass">@msg</label>
         <button @onclick="Save" class="btn">Submit</button>
+    </div>
+</div>
 
 @code{
-    string name = "opi";
+    string name = "";
+    string company = "";
+    string contractor = "";
     string title = "";
     string location = "";
     string description = "";
     string easting = "";
-    string northing = "nort";
+    string northing = "";
+    string siteName = "";
+    string testNumber = "";
+    string waterDepth = "";
+    string coneId = "";
+    string depthDrill = "";
     string msg = "";
+    string msgClass = "red";
     [Parameter]
     public EventCallback<ProjectInfo> HandleClickEventCalls {get; set;}
-    [Parameter]
-    public ProjectInfo ProjectInfo {get; set;} = new();
-    protected override void OnAfterRender(bool firstRender)
+    protected override void OnInitialized()
     {
-        if(ProjectInfo.Name != "")
+        var info = state.SaveProjectParameter.Value.Info;
+        if(info.Name != "" && info.Title != "" && info.Location != "")
         {
-            name = ProjectInfo.Name;
-            location = ProjectInfo.Location;
-            title = ProjectInfo.Title;
-            description = ProjectInfo.Description;
-            easting = ProjectInfo.Easting;
-            northing = ProjectInfo.Northing;
+                name = info.Name;
+                contractor = info.Contractor;
+                company = info.Company;
+                title = info.Title;
+                location = info.Location;
+                description = info.Description;
+                easting = info.Easting;
+                northing = info.Northing;
+                testNumber = info.TestNumber;
+                siteName = info.SiteName;
+                coneId = info.ConeId;
+                waterDepth = info.WaterDepth;
+                depthDrill = info.DepthDrilled;
         }
-        var info = ProjectInfo;
-            Console.WriteLine($"{info.Name} {info.Title} {info.Easting} {info.Northing} {info.Location} {info.Description}");
     }
     private void Save()
     {
-        if(name != "" && title != ""  && location != "")
+        var project = state.SaveProjectParameter.Value;
+        if(name != "" && title != ""  && location != "" && project.DataArray.Count > 0)
         {
             var info = new ProjectInfo()
             {
                 Name = name,
+                Contractor = contractor,
+                Company = company,
                 Title = title,
                 Location = location,
                 Description = description,
                 Easting = easting,
-                Northing = northing
+                Northing = northing,
+                TestNumber = testNumber,
+                SiteName = siteName,
+                ConeId = coneId,
+                WaterDepth = state.WaterColumnDepth.Value.ToString(),
+                DepthDrilled = depthDrill
             };
-            msg = "";
-            HandleClickEventCalls.InvokeAsync(info);
+            project.Info = info;
+            bool isCreated = functions.SaveProject(project);
+            if(isCreated)
+            {
+                msg = "Project progress saved!!! close dialog to continue.";
+                msgClass = "green";
+                ClearAll();
+                if(project.SetProjectToState)
+                {
+                    store.Mutate<Project>("Project",project);
+                }
+            }
         }
         else
         {
+            msgClass = "red";
             msg = "Project must be saved with atleast a processors name, project title and project location";
         }
+    }
+    private void ClearAll()
+    {
+        name = "";
+        title = "";
+        location = "";
+        description = "";
+        easting = "";
+        northing = "";
+        siteName = "";
+        testNumber = "";
+        waterDepth = "";
+        coneId = "";
+        depthDrill = "";
+    }
+    public void Dispose()
+    {
+        store.Mutate<Project>("SaveProjectParameter", new());
     }
 }

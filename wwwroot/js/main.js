@@ -15,6 +15,9 @@ function showFileDialog() {
 function openFileDialog() {
     document.getElementById('input').click();
 }
+function openImageDialog() {
+    document.getElementById('image').click();
+}
 function screenShot(chartId){
     let chart = document.getElementById(chartId);//"chart1"
     html2canvas(chart).then(

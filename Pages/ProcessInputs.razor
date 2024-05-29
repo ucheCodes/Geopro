@@ -1,0 +1,80 @@
+﻿@inject IStore store
+@inject State state
+
+<div class="dialog-bodyr">
+    <div class="dialog-box">
+        <div>
+        <h3>Computation Parameters</h3>
+        </div>
+        <span class="@msgClass">@msg</span>
+        <div class="input-group">
+            <select @onchange="ChangeConeRatio">
+                <option value="0">Select Cone Type</option>
+                <option value="10">10 cm^2</option>
+                <option value="15">15 cm^2</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <select @onchange="ChangeWaterNature">
+                <option value="">Set Nature of Sea water</option>
+                <option value="10.05">Salt Water</option>
+                <option value="9.8">Fresh Water</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <input @bind="coneRatio" type="text" placeholder="Cone Surface Ratio" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="waterDepth" type="text" placeholder="Depth of water column above mudline"  name="input3">
+        </div>
+        <button @onclick="SetValues" class="btn">Submit Values</button>
+    </div>
+
+</div>
+
+@code {
+    string msgClass = "";
+    string msg = "";
+    string coneRatio = "";
+    string waterDepth = "";
+    double waterNature = 0;
+    [Parameter]
+    public EventCallback<bool> ProcessInputsCallback {get;set;}
+    private void ChangeConeRatio(ChangeEventArgs e)
+    {
+        if(e.Value?.ToString() == "10")
+        {
+            coneRatio = "0.75";
+        }
+        else if(e.Value?.ToString() == "15")
+        {
+            coneRatio = "0.59";
+        }
+        else{coneRatio = "";}
+    }
+    private void ChangeWaterNature(ChangeEventArgs e)
+    {
+        double.TryParse(e.Value?.ToString(),out waterNature);
+    }
+    private void SetValues()
+    {
+        double cr; double wd;
+        double.TryParse(coneRatio, out cr);
+        double.TryParse(waterDepth, out wd);
+        if(cr > 0 && wd > 0 && waterNature > 0)
+        {
+            store.Mutate<double>("WaterColumnDepth",wd);
+            store.Mutate<double>("ConeAreaRatio",cr);
+            store.Mutate<double>("WaterNature",waterNature);
+            msg = "";
+            //close and call process method
+            ProcessInputsCallback.InvokeAsync(true);
+        }
+        else
+        {
+            msg= $"Set water nature, water depth and Cone area ratio must be greater than zero";
+            msgClass = "red";
+        }
+        
+    }
+}
