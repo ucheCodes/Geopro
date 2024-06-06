@@ -1,0 +1,49 @@
+﻿@page "/msg"
+@inject NavigationManager navigationManager
+
+    <div class="message-box">
+        <span @onclick="@(() => {ShowMessageBox.InvokeAsync("cancel");})" class="red x">X</span> 
+        <div class="items">
+            @if(msgType == "error")
+            {
+                <i class="fas fa-bomb red icons"></i>
+            }
+            else if(msgType == "warn")
+            {
+                <i class="fas fa-exclamation-triangle yellow icon"></i>
+            }
+            else if(msgType == "valid")
+            {
+                <i class="fas fa-thumbs-up green"></i>
+            }
+            &nbsp;&nbsp; <p class="p">@msg</p>
+        </div>
+        <div class="items">
+            @if(okString != "")
+            {
+                <button @onclick="Ok" class="btn">Ok</button>
+            }
+            @if(route != "")
+            {
+                <button @onclick="@(() => {navigationManager.NavigateTo(route);})" class="btn">Continue</button>
+            }
+        </div>
+    </div>
+@code {
+    [Parameter]
+    public string msg {get;set;} =" hello world message here";
+    [Parameter]
+    public string msgType {get;set;} = "";
+    [Parameter]
+    public string route{get;set;} = "";
+    [Parameter]
+    public string okString{get;set;} = "";
+    [Parameter]
+    public EventCallback<string> ShowMessageBox {get;set;}
+
+    private void Ok()
+    {
+        ShowMessageBox.InvokeAsync(okString);
+        okString = "";
+    }
+}

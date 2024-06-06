@@ -1,0 +1,498 @@
+﻿    @inject DatabaseService database
+    @inject IJSRuntime jSRuntime
+    @inject IStore store
+    @inject State state
+    @inject UploadImage uploadImage
+    
+    <div class="dialog-box">
+        <span @onclick="CloseDialog" class="red x">X</span> 
+        <div>
+            <h3>@Title</h3>
+        </div>
+        <span class="@msgClass">@sotrMsg</span>
+        <div class="input-group">
+            <select @bind="selectCalc">@*@onchange="SelectCalcParameter"*@
+                <option value="">Compute sample parameter</option>
+                <option value="bulk">Bulk Density</option>
+                <option value="dry">Dry Density</option>
+                <option value="nmc">Natural Moisture Content (%)</option>
+                <option value="torvane">Torvane Test</option>
+                <option value= "pp">Pocket Penetrometer</option>
+                <option value="uu">UU Triaxial</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <select @bind="containsCarbonate">
+                <option value="">Sample contains carbonate?</option>
+                <option value="true">True</option>
+                <option value="false">False</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <select @bind="sampleType">
+                <option value="">Select Sample Stratigraphy</option>
+                <option value="clay">Clay</option>
+                <option value="sand">Sand</option>
+                <option value="silt">Silt</option>
+                <option value="Grains">Grains</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <input @bind="testId" type="text" placeholder="Test Id" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="boringStartDepth" type="text" placeholder="Start depth of borehole drilling in meter" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="boringEndDepth" type="text" placeholder="end depth of borehole drilling in meter" name="input1">
+        </div>
+        <div class="input-group">
+            <input @bind="sampleRecovery" type="text" placeholder="Sample Recovery in centimeter"  name="input3">
+        </div>
+        <div class="input-group">
+            Select Sample Photo:
+            <InputFile type="file" id="sampleImg" placeholder="Add sample Image" OnChange="@HandleSampleUpload"  accept=".jpg,.jpeg,.png"/>
+        </div>
+        <div class="input-group">
+            <textarea @bind="sampleDesc" id="textarea" placeholder="Detailed sample Description"  name="textarea"></textarea>
+        </div>
+        <button @onclick="SaveSampleInfo" class="btn">Submit and Save</button>
+    </div>
+    @if(selectCalc != "")
+    {
+    <div class="sample-box dialog-box ">
+        <span @onclick="@((e) => {selectCalc = string.Empty;})" class="red x">X</span> 
+        @if(selectCalc == "bulk")
+        {
+            <h3>Compute Bulk Density (Bulk Unit Weight)</h3>
+            <div class="input-group">
+                <input type="text" @bind="wetContainerLabel" placeholder="Container label / Tin Id" name="input1">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="weightOfRingInGrams" placeholder="Weight of ring cylinder in grams" name="input1">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="weightOfRingAndWetSampleInGrams" placeholder="weight of ring + wet sample in grams"  name="input3">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="diameterOfRingInMillimeter" placeholder="diameter of ring in milli meter" name="input1">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="heightOfRingInMillimeter" placeholder="height of ring cylinder in milli meter" name="input1">
+            </div>
+            <div class="input-group">
+                <p>Volume of cylinderical ring:   <strong>@SOTR.Calculus.BulkDensity.volumeofRingInCm</strong> cm^3</p>
+            </div>
+            <div class="input-group">
+                <p>Bulk Density (g/cm^3):    <b>@SOTR.Calculus.BulkDensity.resultIngcm3</b> g/cm^3</p>
+            </div>
+            <div class="input-group">
+                <p>Bulk Density (KN/m^3):    <b>@SOTR.Calculus.BulkDensity.resultInKNm3</b> KN/m^3</p>
+            </div>
+        }
+        else if(selectCalc == "dry")
+        {
+            <h3>Compute Dry Density (Dry Unit Weight)</h3>
+            <div class="input-group">
+                <input type="text" @bind="dryContainerLabel" placeholder="Container label / Tin Id" name="input1">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="weightOfDryRingInGrams"  placeholder="Weight of ring cylinder in grams" name="input1">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="weightOfRingAndDrySampleInGrams" placeholder="weight of ring + dry sample in grams"  name="input3">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="diameterOfDryRingInMillimeter" placeholder="diameter of ring in milli meter" name="input1">
+            </div>
+            <div class="input-group">
+                <input type="text" @bind="heightOfDryRingInMillimeter" placeholder="height of ring cylinder in milli meter" name="input1">
+            </div>
+            <div class="input-group">
+                <p>Volume of cylinderical ring:   <strong>@SOTR.Calculus.DryDensity.volumeofRingInCm</strong> cm^3</p>
+            </div>
+            <div class="input-group">
+                <p>Dry Density (g/cm^3):    <b>@SOTR.Calculus.DryDensity.resultIngcm3</b> g/cm^3</p>
+            </div>
+            <div class="input-group">
+                <p>Dry Density (KN/m^3):    <b>@SOTR.Calculus.DryDensity.resultInKNm3</b> KN/m^3</p>
+            </div>
+        }
+        else if(selectCalc == "nmc")
+        {
+            <h3>Compute Natural Moisture Content Nmc (%)</h3>
+            <div class="input-group">
+                <input @bind="weightOfRingNmc" type="text" placeholder="Weight of container in grams" name="input1">
+            </div>
+            <div class="input-group">
+                <input @bind="weightOfRingAndWetSampleNmc" type="text" placeholder="Weight of container + wet sample in grams" name="input1">
+            </div>
+            <div class="input-group">
+                <input @bind="weightOfRingAndDrySampleNmc" type="text" placeholder="Weight of container + dry sample in grams" name="input1">
+            </div>
+            <div class="input-group">
+                <p>Natural Moisture Content (%):  <b>@SOTR.Calculus.MoistureContent.result</b> %</p>
+            </div>
+        }
+        else if(selectCalc == "torvane")
+        {
+            <h3>Torvane Test</h3>
+            <div class="input-group">
+                <select @bind="tvVaneValue">
+                    <option value="">Select Torvane blade</option>
+                    <option value="1">Regular Vane (1 kg/cm^2)</option>
+                    <option value="0.2">Large Vane (0.2 kg/cm^2)</option>
+                    <option value="2.5">Small Vane (2.5 kg/cm^2)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <input @bind="tvScaleReading" type="text" placeholder="Scale reading from the torvane unit" name="input1">
+            </div>
+            <div class="input-group">
+                <p>Undrained Shear Strength, Su (kPa):  <b>@SOTR.Calculus._Torvane.resultInKpa</b> kPa</p>
+            </div>
+            <div class="input-group">
+                <p>Undrained Shear Strength, Su (MPa):  <b>@SOTR.Calculus._Torvane.resultInMpa</b> MPa</p>
+            </div>
+        }
+        else if(selectCalc == "pp")
+        {
+            <h3>Pocket Penetrometer Test</h3>
+            <div class="input-group">
+                <select @bind="ppUnit">
+                    <option value="">Select Unit of scale reading</option>
+                    <option value="tsf">TSF</option>
+                    <option value="kgcm2">kg/cm^2</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <select @bind="ppShoe">
+                    <option value="">Select Shoe Constant</option>
+                    <option value="3.125">W. Show (3.125)</option>
+                    <option value="50">No. Shoe (50)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <input @bind="ppScaleReading" type="text" placeholder="scale reading from the pocket penetrometer unit" name="input1">
+            </div>
+            <div class="input-group">
+                <p>Unconfined Compressive Strength (kPa):  <b>@SOTR.Calculus.PP.resultInKpa</b> kPa</p>
+            </div>
+            <div class="input-group">
+                <p>Unconfined Compressive Strength (MPa):  <b>@SOTR.Calculus.PP.resultInMpa</b> MPa</p>
+            </div>
+        }
+        <span class="@msgClass">@calcMsg</span>
+        <button @onclick="SubmitCalculus" class="btn">Compute</button>
+    </div>
+    }
+    @if(showSampleImage && sampleImagePath != "")// && selectCalc == ""
+    {
+        <div class="img-dialog">
+            <span @onclick="(() => {showSampleImage = false;})" class="red x">X</span> 
+            <ViewSampleImage path="@sampleImagePath"/>
+        </div>
+    }
+@code {
+    [Parameter]
+    public SampleInfo SOTR {get;set;} = new();
+    [Parameter]
+    public string Title {get;set;} = "";
+    [Parameter]
+    public bool AllowEdit {get;set;} = false;
+    [Parameter]
+    public EventCallback<bool> CloseSampleDialog {get;set;}
+    [Parameter]
+    public EventCallback<SampleInfo> UpdateSotrData {get;set;}
+    string sotrMsg = "";
+    string calcMsg = "";
+    string msgClass = "red";
+    string testId = "";
+    string sampleRecovery = "";
+    string boringStartDepth = "";
+    string boringEndDepth = "";
+    string sampleType = "";
+    string sampleDesc = "";
+    string selectCalc = "";
+    string containsCarbonate = "";
+    bool showSampleImage = true;
+    string sampleImagePath = "";
+    /*wet unit weight/ bulk density*/
+    string weightOfRingInGrams = "";
+    string weightOfRingAndWetSampleInGrams = "";
+    string diameterOfRingInMillimeter = "";
+    string heightOfRingInMillimeter = "";
+    string wetContainerLabel = "";
+    /*Dry unit weight*/
+    string weightOfDryRingInGrams = "";
+    string weightOfRingAndDrySampleInGrams = "";
+    string diameterOfDryRingInMillimeter = "";
+    string heightOfDryRingInMillimeter = "";
+    string dryContainerLabel = "";
+    /*Natural Mositure Content*/
+    string weightOfRingNmc = "";
+    string weightOfRingAndWetSampleNmc = "";
+    string weightOfRingAndDrySampleNmc = "";
+    /*Torvane Test*/
+    string tvVaneValue = "";
+    string tvScaleReading = "";
+    /*PP Test*/
+    string ppUnit = "";
+    string ppShoe = "";
+    string ppScaleReading = "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        SetEditValues();
+    }
+
+    private void CloseDialog()
+    {
+        CloseSampleDialog.InvokeAsync(false);
+    }
+    private void SaveSampleInfo()
+    {
+        double bsd = 0; double bed = 0; double sr = 0; 
+        var sotr = SOTR;
+        double.TryParse(boringStartDepth,out bsd);
+        double.TryParse(boringEndDepth, out bed);
+        double.TryParse(sampleRecovery, out sr);
+        bool isContainCarbonate = false;
+
+        if(containsCarbonate == "true"){isContainCarbonate = true;}
+        if(sotr.Id == ""){sotr.Id = Guid.NewGuid().ToString(); sotr.Date = DateTime.Now;}
+
+        if(state.Project.Value.Id != "" && sampleType != "" && testId != "")
+        {
+            if(sr > 0  && bsd >= 0 && bed > 0)
+            {
+                sotrMsg = "";
+                msgClass = "";
+                showSampleImage = true;
+                var _sotr = new SampleInfo()
+                {
+                    Id = sotr.Id,
+                    Date = sotr.Date,
+                    ProjectId = state.Project.Value.Id,
+                    TestId = testId,
+                    SampleRecovery = sr,
+                    ContainsCarbonate = isContainCarbonate,
+                    SampleDesc = sampleDesc,
+                    SampleType = sampleType,
+                    SampleImagePath = sampleImagePath,
+                    BoreholeStartDepth = bsd,
+                    BoreholeEndDepth = bed,
+                    Calculus = sotr.Calculus
+                };
+                UpdateSOTR(_sotr);
+            }
+            else
+            {
+                sotrMsg = "depths of borehole and sample recovery must be valid numbers only";
+                msgClass = "red";
+            }
+        }
+        else
+        {
+            sotrMsg = "Kindly fill test Id, sample stratigraphy and other required fields! ";
+            msgClass = "red";
+        }
+    }
+    private void SubmitCalculus()
+    {
+        if(selectCalc == "bulk")
+        {
+            double wrg; double wrwsg; double d; double h;
+            if(double.TryParse(weightOfRingInGrams, out wrg) && double.TryParse(weightOfRingAndWetSampleInGrams, out wrwsg) &&
+                double.TryParse(diameterOfRingInMillimeter,out d) && double.TryParse(heightOfRingInMillimeter,out h))
+            {
+                double heightOfRingInCentimeter = h / 10;
+                double diameterOfRingInCentimeter = d / 10;
+                double halfDiameterCm = (diameterOfRingInCentimeter / 2);
+                double volInCm3 = Math.PI * Math.Pow(halfDiameterCm,2) * heightOfRingInCentimeter;
+                double bulkDensityIngramPerCm3 = (wrwsg - wrg) / volInCm3;
+                double bulkDensityInKNm3 = bulkDensityIngramPerCm3 * 9.81;//g = 9.81
+                //Add to summary of test results
+                //(string label, double weightOfRingInGram, double weightOfRingAndWetSampleInGram, double diameterOfRingInCm, double heightOfRingInCm, double volumeofRingInCm,double resultIngcm3, double resultInKNm3) 
+                var bd = (wetContainerLabel, wrg, wrwsg,diameterOfRingInCentimeter,heightOfRingInCentimeter,Math.Round(volInCm3, 2),Math.Round(bulkDensityIngramPerCm3, 4),Math.Round(bulkDensityInKNm3, 4));
+                SOTR.Calculus.BulkDensity = bd;
+            }
+        }
+        else if(selectCalc == "dry")
+        {
+            double wdrg; double wrdsg; double d; double h;
+            if(double.TryParse(weightOfDryRingInGrams, out wdrg) && double.TryParse(weightOfRingAndDrySampleInGrams, out wrdsg) &&
+                double.TryParse(diameterOfDryRingInMillimeter,out d) && double.TryParse(heightOfDryRingInMillimeter,out h))
+            {
+                double heightOfDryRingInCentimeter = h / 10;
+                double diameterOfDryRingInCentimeter = d / 10;
+                double halfDiameterCm = (diameterOfDryRingInCentimeter / 2);
+                double volOfDryInCm3 = Math.PI * Math.Pow(halfDiameterCm,2) * heightOfDryRingInCentimeter;
+                double dryDensityIngramPerCm3 = (wrdsg - wdrg) / volOfDryInCm3;
+                double dryDensityInKNm3 = dryDensityIngramPerCm3 * 9.81;//g = 9.81
+                //add to calculus
+                var dd = (dryContainerLabel, wdrg, wrdsg,diameterOfDryRingInCentimeter,heightOfDryRingInCentimeter,Math.Round(volOfDryInCm3, 2),Math.Round(dryDensityIngramPerCm3, 4),Math.Round(dryDensityInKNm3, 4));
+                SOTR.Calculus.DryDensity = dd;
+            }
+        }
+        else if(selectCalc == "nmc")
+        {
+            double wr; double wrws; double wrds;
+            if(double.TryParse(weightOfRingAndWetSampleNmc, out wrws) && double.TryParse(weightOfRingNmc, out wr) && double.TryParse(weightOfRingAndDrySampleNmc, out wrds))
+            {
+                double mc = (wrws - wrds) / (wrds - wr);
+                double mcToPercent = mc * 100;
+                //(double weightOfRing, double weightOfRingAndWetSample, double weightOfRingAndDrySample, double result)
+                var nmc = (wr,wrws,wrds,Math.Round(mcToPercent,2));
+                SOTR.Calculus.MoistureContent = nmc;
+            }
+        }
+        else if(selectCalc == "torvane")
+        {
+            double vane = 0; double reading = 0;
+            if(double.TryParse(tvVaneValue,out vane) && double.TryParse(tvScaleReading, out reading))
+            {
+                double suInKpa = reading * 100 * vane;
+                double suInMpa = suInKpa / 1000;
+                var tv = (tvVaneValue,tvScaleReading,suInKpa,suInMpa);
+                SOTR.Calculus._Torvane = tv;
+            }
+        }
+        else if(selectCalc == "pp")
+        {
+            double shoe = 0; double reading = 0; double ppInKpa = 0; 
+            if(double.TryParse(ppShoe,out shoe) && double.TryParse(ppScaleReading, out reading))
+            {
+                switch(ppUnit)
+                {
+                    case "tsf":
+                     ppInKpa = reading * shoe * 95.76;//convert from tsf to kpa
+                    break;
+                    case "kgcm2":
+                      ppInKpa = reading * shoe * 98.07;//convert from kg/cm2 to kpa
+                    break;
+                    default:
+                      ppInKpa = 0; 
+                    break;
+                }
+                double ppInMpa = ppInKpa / 1000;
+                var pp = (ppUnit,ppShoe,ppScaleReading, ppInKpa,ppInMpa);
+                SOTR.Calculus.PP = pp;
+            }
+        }
+    }
+    private async void HandleSampleUpload(InputFileChangeEventArgs e)
+    {
+        var path = await uploadImage.ConvertImageToWebp(e.File);
+        sampleImagePath = path;
+        showSampleImage = true;
+        StateHasChanged();
+    }
+    private bool UpdateSOTR(SampleInfo sotr)
+    {
+        if(sotr.Id != "")
+        {
+            string key = JsonConvert.SerializeObject(sotr.Id);
+            string value = JsonConvert.SerializeObject(sotr);
+            var isAdded = database.Create("SOTR",key,value);
+            if(isAdded)
+            {
+                UpdateSotrData.InvokeAsync(sotr);
+                ClearAll();
+                CloseDialog();
+            }
+            return isAdded;
+        }
+        return false;
+    }
+    private void SelectCalcParameter(ChangeEventArgs e)
+    {
+        calcMsg = "";msgClass = "";
+        selectCalc = e.Value?.ToString() ?? "";
+    }
+    private void SetEditValues()
+    {
+        if(SOTR.Id != "" && AllowEdit)
+        {
+            containsCarbonate = "false";
+            testId = SOTR.TestId;
+            sampleRecovery = SOTR.SampleRecovery.ToString();
+            boringStartDepth = SOTR.BoreholeStartDepth.ToString();
+            boringEndDepth = SOTR.BoreholeEndDepth.ToString();
+            sampleType = SOTR.SampleType;
+            sampleDesc = SOTR.SampleDesc;
+            sampleImagePath = SOTR.SampleImagePath;
+            showSampleImage = true;
+            if(SOTR.ContainsCarbonate){containsCarbonate = "true";}
+                /*wet unit weight/ bulk density*/
+            wetContainerLabel = SOTR.Calculus.BulkDensity.ContainerLabel;
+            weightOfRingInGrams = SOTR.Calculus.BulkDensity.weightOfRingInGram.ToString();
+            weightOfRingAndWetSampleInGrams = SOTR.Calculus.BulkDensity.weightOfRingAndWetSampleInGram.ToString();
+            diameterOfRingInMillimeter = (SOTR.Calculus.BulkDensity.diameterOfRingInCm * 10).ToString("F2");
+            heightOfRingInMillimeter = (SOTR.Calculus.BulkDensity.heightOfRingInCm * 10).ToString("#.##");
+                            /*dry unit weight*/
+            dryContainerLabel = SOTR.Calculus.DryDensity.ContainerLabel;
+            weightOfDryRingInGrams = SOTR.Calculus.DryDensity.weightOfRingInGram.ToString();
+            weightOfRingAndDrySampleInGrams = SOTR.Calculus.DryDensity.weightOfRingAndDrySampleInGram.ToString();
+            diameterOfDryRingInMillimeter = (SOTR.Calculus.DryDensity.diameterOfRingInCm * 10).ToString("F2");
+            heightOfDryRingInMillimeter = (SOTR.Calculus.DryDensity.heightOfRingInCm * 10).ToString("F2");
+            //Nmc
+            weightOfRingNmc = SOTR.Calculus.MoistureContent.weightOfRing.ToString();
+            weightOfRingAndWetSampleNmc = SOTR.Calculus.MoistureContent.weightOfRingAndWetSample.ToString();
+            weightOfRingAndDrySampleNmc = SOTR.Calculus.MoistureContent.weightOfRingAndDrySample.ToString();
+            //Torvane
+            tvScaleReading = SOTR.Calculus._Torvane.scaleReading;
+            tvVaneValue = SOTR.Calculus._Torvane.vaneBlade;
+            //PP
+            ppUnit = SOTR.Calculus.PP.ppUnit;
+            ppShoe = SOTR.Calculus.PP.ppShoe;
+            ppScaleReading = SOTR.Calculus.PP.scaleReading;
+
+            /*prevent re render*/
+            AllowEdit = false;
+            StateHasChanged();
+        }
+        else if(Title == "")
+        {
+            Title = "Add New Test Result";
+            AllowEdit = false;
+            ClearAll();
+            StateHasChanged();
+        }
+    }
+    private void ClearAll()
+    {
+        testId = "";
+        sampleRecovery = "";
+        boringStartDepth = "";
+        boringEndDepth = "";
+        sampleType = "";
+        containsCarbonate = "";
+        showSampleImage = false;
+        sampleImagePath = "";
+        sampleDesc = "";
+             /*wet unit weight/ bulk density*/
+        weightOfRingInGrams = "";
+        weightOfRingAndWetSampleInGrams = "";
+        diameterOfRingInMillimeter = "";
+        heightOfRingInMillimeter = "";
+        wetContainerLabel = "";
+            /*Dry unit weight*/
+        weightOfDryRingInGrams = "";
+        weightOfRingAndDrySampleInGrams = "";
+        diameterOfDryRingInMillimeter = "";
+        heightOfDryRingInMillimeter = "";
+        dryContainerLabel = "";
+        //Nmc
+        weightOfRingAndWetSampleNmc = "";
+        weightOfRingAndDrySampleNmc = "";
+        weightOfRingNmc = "";
+        //Tv
+        tvScaleReading = "";
+        tvVaneValue = "";
+        //pp
+        ppUnit = "";
+        ppShoe = "";
+        ppScaleReading = "";
+    }
+}

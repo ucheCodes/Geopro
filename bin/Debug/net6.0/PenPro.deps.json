@@ -10,6 +10,7 @@
         "dependencies": {
           "Newtonsoft.Json": "13.0.3",
           "OxyPlot.Blazor": "2.5.9",
+          "SixLabors.ImageSharp": "3.1.4",
           "DBreeze": "1.115.2023.1103"
         },
         "runtime": {
@@ -50,6 +51,14 @@
             "fileVersion": "2.1.2.0"
           }
         }
+      },
+      "SixLabors.ImageSharp/3.1.4": {
+        "runtime": {
+          "lib/net6.0/SixLabors.ImageSharp.dll": {
+            "assemblyVersion": "3.0.0.0",
+            "fileVersion": "3.1.4.0"
+          }
+        }
       }
     }
   },
@@ -86,6 +95,13 @@
       "sha512": "sha512-/BuPL1Wa7ZhpKA2DBe72md+S8PgIHF+UP/NsKfO9BiheXnbns1/tqS7s2MWIR1xFy5i+PWVC67KziGPY48mNgA==",
       "path": "oxyplot.core/2.1.2",
       "hashPath": "oxyplot.core.2.1.2.nupkg.sha512"
+    },
+    "SixLabors.ImageSharp/3.1.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lFIdxgGDA5iYkUMRFOze7BGLcdpoLFbR+a20kc1W7NepvzU7ejtxtWOg9RvgG7kb9tBoJ3ONYOK6kLil/dgF1w==",
+      "path": "sixlabors.imagesharp/3.1.4",
+      "hashPath": "sixlabors.imagesharp.3.1.4.nupkg.sha512"
     }
   }
 }

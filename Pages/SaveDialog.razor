@@ -19,7 +19,7 @@
             <input @bind="contractor" type="text" placeholder="Contractor's Name" name="input1">
         </div>
         <div class="input-group">
-            <input @bind="company" type="text" placeholder="Client's Name" name="input1">
+            <input @bind="client" type="text" placeholder="Client's Name" name="input1">
         </div>
         <div class="input-group">
             <input @bind="title" type="text" placeholder="Project Title"  name="input2">
@@ -55,7 +55,7 @@
 
 @code{
     string name = "";
-    string company = "";
+    string client = "";
     string contractor = "";
     string title = "";
     string location = "";
@@ -78,7 +78,7 @@
         {
                 name = info.Name;
                 contractor = info.Contractor;
-                company = info.Company;
+                client = info.Client;
                 title = info.Title;
                 location = info.Location;
                 description = info.Description;
@@ -94,13 +94,13 @@
     private void Save()
     {
         var project = state.SaveProjectParameter.Value;
-        if(name != "" && title != ""  && location != "" && project.DataArray.Count > 0)
+        if(name != "" && title != ""  && location != "" && project.Id != "")//&& project.DataArray.Count > 0
         {
             var info = new ProjectInfo()
             {
                 Name = name,
                 Contractor = contractor,
-                Company = company,
+                Client = client,
                 Title = title,
                 Location = location,
                 Description = description,
@@ -121,8 +121,10 @@
                 ClearAll();
                 if(project.SetProjectToState)
                 {
+                    project.SetProjectToState = false;
                     store.Mutate<Project>("Project",project);
                 }
+                navigationManager.NavigateTo("/");
             }
         }
         else

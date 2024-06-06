@@ -1,0 +1,272 @@
+﻿@page "/lab"
+@inject DatabaseService database
+@inject NavigationManager navigationManager
+@inject IStore store
+@inject State state
+@inject WriteToFile fileWriter
+@implements IDisposable
+
+<div class="lab">
+<span @onclick="@(() => {navigationManager.NavigateTo("/");})" class="red x">X</span> 
+@if(allSOTR.Count > 0)
+{
+    <div class="dynamic-table ">
+        <h3 class="heading">Summary of Test Results</h3>
+        <div class="item">
+            <button @onclick="EnableAddNewSample"  class="btn">New Test</button>
+            <button @onclick="@(() => {navigationManager.NavigateTo("/calculus");})"  class="btn">Show Parameters</button>
+            <button @onclick="WriteToCSVFile" class="btn">Save Data</button>
+        </div>
+        <div class="table large">
+            <div class="table-body">
+                <table>
+                    <thead>
+                        @if(sampleHeaders.Count > 0)
+                        {
+                            <tr>
+                            @foreach(var header in sampleHeaders)
+                            {
+                                    @if(!string.IsNullOrWhiteSpace(header))
+                                    {
+                                        <th>@header</th>
+                                    }
+                            }
+                            </tr>
+                        }
+                    </thead>
+                    <tbody>
+                        @foreach(var s in allSOTR)
+                        {
+                            count++;
+                            <tr>
+                                <td>@count</td>
+                                <td>@s.Date.ToString("dd/MM/yyyy")</td>
+                                <td>@s.Date.ToString("hh:mm tt")</td>
+                                <td>@s.TestId</td>
+                                <td>@s.BoreholeStartDepth</td>
+                                <td>@s.BoreholeEndDepth</td>
+                                <td>@s.SampleRecovery</td>
+                                <td>@s.SampleType</td>
+                                <td>@s.ContainsCarbonate</td>
+                                <td @onclick="(() => Edit(s.Id))" class="icon"><i class="fas fa-edit green"></i></td>
+                                <td @onclick="(() => _Delete(s.Id))" class="icon"><i class="fas fa-trash red"></i></td>
+                                <td @onclick="(() => {showSampleImage = true; sampleImagePath = s.SampleImagePath;})" class="img"><img src="@s.SampleImagePath"></td>
+                                <td>
+                                    <p> @s.SampleDesc</p>
+                                </td>
+                            </tr>
+                            BuildCsvString(count,s);
+                        }
+                    </tbody>
+                </table>
+            </div>
+    </div>
+</div>
+}
+</div>
+
+<div class="msg-dialog @((showMessageBox) ? "active" : "")">
+    <MessageBox msgType="@msgBoxType"
+        msg="@msgBoxInfo" okString="@msgBoxOkString" route="@msgBoxRoute" ShowMessageBox="CloseMessageBox"  />
+</div>
+
+<div class="sample-dialog @((showSampleDialog) ? "active" : "")">
+    <AddSample AllowEdit="allowSampleEdit" Title="@title" SOTR="sotr" UpdateSotrData="UpdateSotr" CloseSampleDialog="ToggleSampleDialog"  />
+</div>
+
+<div class="img-dialog sample-dialog @((showSampleImage) ? "active" : "")">
+    <span @onclick="(() => {showSampleImage = false;})" class="red x">X</span> 
+    <ViewSampleImage path="@sampleImagePath"/>
+</div>
+
+
+@code {
+    bool showSampleImage = false;
+    string sampleImagePath = "";
+    bool showSampleDialog = false;
+    bool allowSampleEdit = false;
+    int count = 0;
+    bool showMessageBox = false;
+    string msgBoxInfo = "";
+    string msgBoxType = "";
+    string msgBoxRoute = "";
+    string msgBoxOkString = "";
+    string csvData = "";
+    SampleInfo sotr = new();
+    string title = "Add a New Test Result";
+    List<SampleInfo> allSOTR = new();
+    List<string> sampleHeaders = new () 
+        {
+            "S/N", "Date", "Time", "Test Id", "Start depth (m)", "End Depth (m)", "Recovery (cm)", "Soil Type", "Contains Carbonate","Edit","Delete","Sample Image", "Description"
+        };
+    List<string> Calculus = new()
+    {
+        "Bulk Density",
+            "Dry Density", "Submerged Density", "water content", "Pocket Penetrometer",
+            "UU Triaxial", "Torvane Test", 
+    };
+    protected override void OnInitialized()
+    {
+        GetAllSOTR();
+        InitCsvData();
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        count = 0;
+    }
+    private void InitCsvData()
+    {
+        int count = 0;
+        foreach(var d in sampleHeaders)
+        {
+            if(count < sampleHeaders.Count - 1 && d != "Edit" && d != "Delete" && d != "Sample Image")
+            {
+                csvData += $"{d},";
+            }
+            else if(count <= sampleHeaders.Count - 1 && d != "Edit" && d != "Delete" && d != "Sample Image")
+            {
+                csvData += $"{d} \n";
+            }
+            count++;
+        }
+    }
+    private void Edit(string id)
+    {
+        sotr = new();var  _sotr = new SampleInfo();
+         _sotr = allSOTR.FirstOrDefault(s => s.Id == id);
+        if(_sotr != null)
+        {
+            sotr = _sotr;
+            title = $"Edit Test Result : {sotr.TestId}";
+            allowSampleEdit = true;
+        }
+        ToggleSampleDialog(true);
+    }
+    private void GetAllSOTR()
+    {
+        if(state.Project.Value.Id != "")
+        {
+            var data = database.ReadAll("SOTR");
+            foreach(var d in data)
+            {
+                var val = JsonConvert.DeserializeObject<SampleInfo>(d.Value);
+                if(val != null && val.ProjectId == state.Project.Value.Id)
+                {
+                    allSOTR.Add(val);
+                }
+            }
+            allSOTR = allSOTR.OrderBy(x => x.Date).ToList();
+            if(allSOTR.Count == 0)
+            {
+                MsgBoxHelper("No test result recorded! click Ok to add a new test","warn","","ToggleSampleDialog",true);
+            }
+        }
+        else
+        {
+            MsgBoxHelper("Empty Project, click Ok to save and start a new project","warn","","SaveNewProject",true);
+        }
+    }
+    private void MsgBoxHelper(string info, string type, string route, string ok, bool show)
+    {
+        msgBoxInfo = info;
+        msgBoxType = type;
+        msgBoxRoute = route;
+        msgBoxOkString = ok;
+        showMessageBox = show;
+    }
+    private void SaveNewProject()
+    {
+        if(state.Project.Value.Id == "" )
+        {
+            Project project = new();
+            string id = Guid.NewGuid().ToString();
+            project.Id = id;
+            project.SetProjectToState = true;
+            store.Mutate<Project>("SaveProjectParameter",project);
+            navigationManager.NavigateTo("/save");           
+        }
+    }
+    private void CloseMessageBox(string value)
+    {
+        if(value == "cancel")
+        {
+            showMessageBox = false;
+        }
+        else if(value == "continue"){/*changes route*/}
+        else if(value != "")
+        {
+            RunOkFunction(value);
+            showMessageBox = false;
+        }
+    }
+    private void RunOkFunction(string functionName)
+    {
+        string parameter = "";
+        if(functionName.StartsWith("Delete_"))//can use for other functions that contains parameter
+        {
+            var arr = functionName.Split("_");
+            functionName = "Delete";//or  arr[0]
+            parameter = arr[1];
+        }
+        switch(functionName)
+        {
+            case "ToggleSampleDialog":
+                ToggleSampleDialog(true);
+            break;
+            case "SaveNewProject":
+                SaveNewProject();
+            break;
+            case "Delete":
+                Delete(parameter);
+            break;
+            default:
+            break;
+        }
+    }
+    
+    private void ToggleSampleDialog(bool val)
+    {
+        showSampleDialog = val;
+    }
+    private void EnableAddNewSample()
+    {
+        ToggleSampleDialog(true);
+         allowSampleEdit = false; 
+         title = "";
+         sotr = new();
+    }
+    private void UpdateSotr(SampleInfo updatedSotr)
+    {
+        allSOTR = allSOTR.Where(x => x.Id != updatedSotr.Id).ToList();
+        allSOTR.Add(updatedSotr);
+    }
+    private void _Delete(string id)
+    {
+        string okVal = $"Delete_{id}";
+        MsgBoxHelper("This test result and all related computations will be deleted permanently!","warn","",okVal,true);
+    }
+    private void Delete(string id)
+    {
+        var isDel = database.Delete("SOTR",id);
+        if(isDel)
+        {
+            allSOTR = allSOTR.Where(d => d.Id != id).ToList();
+        }
+    }
+    private void BuildCsvString(int count,SampleInfo s)
+    {
+        string line = $"{count},{s.Date.ToString("dd/MM/yyyy")},{s.Date.ToString("hh:mm tt")},{s.TestId},{s.BoreholeStartDepth},{s.BoreholeEndDepth},{s.SampleRecovery},{s.SampleType},{s.ContainsCarbonate},{s.SampleDesc}";
+        csvData += $"{line}\n";
+    }
+    private void WriteToCSVFile()
+    {
+        if(csvData != "")
+        {
+            fileWriter.WriteToCSVFile(csvData);
+        }
+    }
+    public void Dispose()
+    {
+        allSOTR = new();
+    }
+}

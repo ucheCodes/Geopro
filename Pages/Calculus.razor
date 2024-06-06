@@ -1,0 +1,156 @@
+﻿@page "/calculus"
+@inject DatabaseService database
+@inject NavigationManager navigationManager
+@inject IStore store
+@inject State state
+@inject WriteToFile fileWriter
+
+<div class="lab">
+<span @onclick="@(() => {navigationManager.NavigateTo("/lab");})" class="red x">X</span> 
+@if(allSOTR.Count > 0)
+{
+    <div class="dynamic-table ">
+        <h3 class="heading">Parameters of Soil Test Results</h3>
+        <div class="item">
+            <button @onclick="WriteToCSVFile" class="btn">Save Data</button>
+        </div>
+        <p class="p red">N:B :- yw (bulk unit weight), yd (dry unit weight), nmc (Natural Moisture Content), su (undrained shear strength)</p>
+        <p class="p red">pp is result of the Pocket Penetrometer test for unconfined compressive strength of soil</p>
+        <div class="table large">
+            <div class="table-body">
+                <table>
+                    <thead>
+                        @if(sampleHeaders.Count > 0)
+                        {
+                            <tr>
+                            @foreach(var header in sampleHeaders)
+                            {
+                                    @if(!string.IsNullOrWhiteSpace(header))
+                                    {
+                                        <th>@header</th>
+                                    }
+                            }
+                            </tr>
+                        }
+                    </thead>
+                    <tbody>
+                        @foreach(var calc in allSOTR)
+                        {
+                            <tr>
+                                <td>@calc.TestId</td>
+                                <td>@calc.Calculus.BulkDensity.resultIngcm3</td>
+                                <td>@calc.Calculus.BulkDensity.resultInKNm3</td>
+                                <td>@calc.Calculus.DryDensity.resultIngcm3</td>
+                                <td>@calc.Calculus.DryDensity.resultInKNm3</td>
+                                <td>@calc.Calculus.MoistureContent.result</td>
+                                <td>@calc.Calculus._Torvane.resultInKpa</td>
+                                <td>@calc.Calculus._Torvane.resultInMpa</td>
+                                <td>@calc.Calculus.PP.resultInKpa</td>
+                                <td>@calc.Calculus.PP.resultInMpa</td>
+                            </tr>
+                            BuildCsvString(calc);
+                        }
+                    </tbody>
+                </table>
+            </div>
+    </div>
+</div>
+}
+</div>
+
+<div class="msg-dialog @((showMessageBox) ? "active" : "")">
+    <MessageBox msgType="@msgBoxType"
+        msg="@msgBoxInfo" okString="@msgBoxOkString" route="@msgBoxRoute" ShowMessageBox="CloseMessageBox"  />
+</div>
+
+@code {    
+    bool showMessageBox = false;
+    string msgBoxInfo = "";
+    string msgBoxType = "";
+    string msgBoxRoute = "";
+    string msgBoxOkString = "";
+    List<SampleInfo> allSOTR = new();
+    string csvData = "";
+    List<string> sampleHeaders = new () 
+    {
+        "Test Id","yw (g/cm^3)", "yw (kN/m^3)", "yd (g/cm^3)","yd (kN/m^3)", "nmc (%)","su (kPa)", "su (MPa)", "pp (kPa)", "pp (Mpa)"
+    };//add units when adding calculations
+    protected override void OnInitialized()
+    {
+        GetAllSOTR();
+        InitCsvData();
+    }
+    private void InitCsvData()
+    {
+        int count = 0;
+        foreach(var d in sampleHeaders)
+        {
+            if(count < sampleHeaders.Count - 1)
+            {
+                csvData += $"{d},";
+            }
+            else
+            {
+                csvData += $"{d} \n";
+            }
+            count++;
+        }
+    }
+    private void GetAllSOTR()
+    {
+        if(state.Project.Value.Id != "")
+        {
+            var data = database.ReadAll("SOTR");
+            foreach(var d in data)
+            {
+                var val = JsonConvert.DeserializeObject<SampleInfo>(d.Value);
+                if(val != null && val.ProjectId == state.Project.Value.Id)
+                {
+                    allSOTR.Add(val);
+                }
+            }
+            allSOTR = allSOTR.OrderBy(x => x.Date).ToList();
+            if(allSOTR.Count == 0)
+            {
+                MsgBoxHelper("No test result recorded!","warn","","null",true);
+            }
+        }
+        else
+        {
+            MsgBoxHelper("Empty Project!!!","warn","","null",true);
+        }
+    }
+    private void MsgBoxHelper(string info, string type, string route, string ok, bool show)
+    {
+        msgBoxInfo = info;
+        msgBoxType = type;
+        msgBoxRoute = route;
+        msgBoxOkString = ok;
+        showMessageBox = show;
+    }
+    private void BuildCsvString(SampleInfo calc)
+    {
+        string line = $"{calc.TestId},{calc.Calculus.BulkDensity.resultIngcm3},{calc.Calculus.BulkDensity.resultInKNm3},{calc.Calculus.DryDensity.resultIngcm3},{calc.Calculus.DryDensity.resultInKNm3},{calc.Calculus.MoistureContent.result}";
+        line += $"{calc.Calculus._Torvane.resultInKpa},{calc.Calculus._Torvane.resultInMpa},{calc.Calculus.PP.resultInKpa},{calc.Calculus.PP.resultInMpa}";
+        csvData += $"{line}\n";
+    }
+    private void WriteToCSVFile()
+    {
+        if(csvData != "")
+        {
+            fileWriter.WriteToCSVFile(csvData);
+        }
+    }
+    private void CloseMessageBox(string value)
+    {
+        if(value == "cancel")
+        {
+            showMessageBox = false;
+        }
+        else if(value == "continue"){}
+        else if(value != "")
+        {
+            showMessageBox = false;
+        }
+    }
+}

@@ -13,9 +13,9 @@
                 <img @onclick="(() => {ChangeImage(1);})" src="@state.ChartImages.Value.Item1"/>
             </div>
             <div class="label">
-                <label class="b1">Project Title: First E & P Geotechnical Investigation at anyala Central and Songhai OML 83 & 85</label>
-                <br><label class="b2">Client: First Exploration and Petroleum and International Resources Limited</label>&nbsp;&nbsp;
-                <label class="b2">Contractor: Gems Global Resources Nigeria Limited</label><br>
+                <label class="b1">Project Title: @info.Title</label>
+                <br><label class="b2">Client: @info.Client</label>&nbsp;&nbsp;
+                <label class="b2">Contractor: @info.Contractor</label><br>
                 <label class="b3">Site Name: @info.SiteName</label>&nbsp;&nbsp;
                 <label class="b3">Location: @info.Location</label>
                 <br><label class="b3">E: @info.Easting</label>&nbsp;&nbsp;

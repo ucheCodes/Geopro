@@ -16,6 +16,7 @@ builder.Services.AddScoped<IStore,Store>();
 builder.Services.AddScoped<IFunctions,Functions>();
 builder.Services.AddScoped<State>();
 builder.Services.AddScoped<WriteToFile>();
+builder.Services.AddScoped<UploadImage>();
 
 var app = builder.Build();
 

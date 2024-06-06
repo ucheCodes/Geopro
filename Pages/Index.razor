@@ -22,8 +22,9 @@
         <div>
             <span class="icons-group @((activeMenu == file) ? "active" : "")">
                 <i @onclick="(() => ShowFileDialog(true))" class="fas fa-file-csv"></i>
+                <i @onclick="GotoLab" class="fas fa-tint"/>
                 <i @onclick="(() => {showProjects = true;})" class="fas fa-eye"></i>
-                <i @onclick="ClearAll"  class="fas fa-trash"></i>
+                <i @onclick="_ClearAll"  class="fas fa-trash"></i>
             </span>
             <span class="icons-group @((activeMenu == edit) ? "active" : "")">
                     <i @onclick="(() => ShowFileDialog(false))"  class="fas fa-folder-open"></i>
@@ -45,7 +46,6 @@
                 <i @onclick="@(e =>Screenshot("chart1"))" class="fas fa-camera"></i>
             </span>
         </div>
-        <label class="label @msgClass">@iconMsg</label>
     </div>
   </div> 
 
@@ -77,18 +77,26 @@
         <span @onclick="@((e) => {showProcessInput = false;})" class="red x">X</span> 
         <ProcessInputs ProcessInputsCallback="ProcessInputs"  />
     </div>
+
+    <div class="msg-dialog @((showMessageBox) ? "active" : "")">
+        <MessageBox msgType="@msgBoxType"
+           msg="@msgBoxInfo" okString="@msgBoxOkString" route="@msgBoxRoute" ShowMessageBox="CloseMessageBox"  />
+    </div>
 </section>
 
 @code{
-    public Chart? chartRef; //@onmouseover="@(e => HandleMouseOverIconsTooltip("Load a new *.csv data file", file))" 
+    public Chart? chartRef;
     bool showBigGraph = false;
+    bool showMessageBox = false;
+    string msgBoxInfo = "";
+    string msgBoxType = "";
+    string msgBoxRoute = "";
+    string msgBoxOkString = "";
     bool showProcessInput = false;
     bool showBigTable = false;
     bool showProjects = false;
     bool isFiltered = false;
     bool isProcessed = false;
-    string iconMsg = "";
-    string msgClass = "black";
     private string activeMenu = "file";
     string file = "file";
     string edit = "edit";
@@ -106,6 +114,12 @@
     Dictionary<int, List<double>> filteredRawDataInColumnsDict = new Dictionary<int, List<double>>();
     protected override void OnInitialized()
     {
+        /*
+            study and work on drifts and zeros
+            create boring logs and plot torvane (undrained shear strength (su)), pp and UU
+            confirm formula binding relationship of yd, yw and nmc in excel
+            excel data reader for .xls
+        */
     }
     protected override void OnAfterRender(bool firstRender)
     {
@@ -148,6 +162,49 @@
             await jSRuntime.InvokeVoidAsync("screenShot",id);
             navigationManager.NavigateTo($"/output");
         }
+        else
+        {
+            MsgBoxHelper("Kindly start a project to generate charts!","warn","","null",true);
+        }
+    }
+    private void GotoLab()
+    {
+        navigationManager.NavigateTo("/lab");
+    }
+    private void CloseMessageBox(string value)
+    {
+        if(value == "cancel")
+        {
+            showMessageBox = false;
+        }
+        else if(value == "continue"){/*changes route*/}
+        else if(value != "")
+        {
+            RunOkFunction(value);
+            showMessageBox = false;
+        }
+    }
+    private void RunOkFunction(string functionName)
+    {
+        switch(functionName)
+        {
+            case "ClearAll":
+                ClearAll();
+            break;
+            case "Save":
+                //SaveNewProject();
+            break;
+            default:
+            break;
+        }
+    }
+    private void MsgBoxHelper(string info, string type, string route, string ok, bool show)
+    {
+        msgBoxInfo = info;
+        msgBoxType = type;
+        msgBoxRoute = route;
+        msgBoxOkString = ok;
+        showMessageBox = show;
     }
     private void Test2()
     {
@@ -203,6 +260,10 @@
                 string data = $"{header}\n{unit}\n{body}";
                 fileWriter.WriteToCSVFile(data);
             }
+            else
+            {
+                MsgBoxHelper("No data available. Kindly start a new project","warn","","null",true);
+            }
     }
     private void ViewRawData()
     {
@@ -211,12 +272,11 @@
          store.Mutate<string>("Data2Show","raw");
          tableTitle = "CPT Raw Data";
          chartRef.ViewRawData(dataArray);
-         iconMsg = "";
        }
         else
        {
-            iconMsg = "No data imported ...Kindly, start a new project";
-            msgClass = "red";
+            var msg = "No data imported ...Kindly, start a new project";
+            MsgBoxHelper(msg,"warn","","null",true);
        }
     }
     private void ViewDataDecay()
@@ -226,12 +286,11 @@
          store.Mutate<string>("Data2Show","decay");
          tableTitle = "CPT Raw Data Decay";
          chartRef.ViewDataDecay(dataArray);
-         iconMsg = "";
        }
         else
        {
-            iconMsg = "No data imported ...Kindly, start a new project";
-            msgClass = "red";
+            var msg = "No data imported ...Kindly, start a new project";
+            MsgBoxHelper(msg,"warn","","null",true);
        }
     }
     private void ViewFilteredData()
@@ -244,7 +303,6 @@
                 filteredRawDataInRowsArray = FilterRawData(dataArray);
                 chartRef.ViewFilteredData(filteredRawDataInRowsArray,filteredRawDataInColumnsDict);
                 isFiltered = true;
-                iconMsg = "";
             }
             else
             {
@@ -255,8 +313,8 @@
        }
        else
        {
-            iconMsg = "No data imported for processing";
-            msgClass = "red";
+            var msg = "No data imported for processing";
+            MsgBoxHelper(msg,"warn","","null",true);
        }
     }
     private void ProcessInputs()
@@ -272,7 +330,6 @@
             if(state.WaterColumnDepth.Value > 0 && state.ConeAreaRatio.Value > 0)
             {
                 computeProcessedData();
-                iconMsg = "";
                 store.Mutate<string>("Data2Show","processed");
                 tableTitle = "CPT Processed Data";
                 chartRef.ViewProcessedData();
@@ -284,8 +341,8 @@
        }
        else
        {
-            iconMsg = "No data imported for processing";
-            msgClass = "red";
+            var msg = "No data imported for processing";
+            MsgBoxHelper(msg,"warn","","null",true);
        }
     }
     private void computeProcessedData()
@@ -336,9 +393,8 @@
         }
         catch(Exception e)
         {
-            iconMsg = e.Message.ToString();
-            msgClass = "red";
-            Console.WriteLine($"{e.Message}");
+            var msg = e.Message.ToString();
+            MsgBoxHelper(msg,"warn","","null",true);
         }
     }
     private void ModifyHeadersForProcessed(int dataIndex)
@@ -380,13 +436,13 @@
         }
         else if(operation == "delete")
         {
-            iconMsg = "Project deleted successfully";
-            msgClass = "red";
+            var msg = "Project deleted successfully";
+            MsgBoxHelper(msg,"valid","","null",true);
         }
         else if(operation == "delete failed")
         {
-            iconMsg = "project failed to delete!!!";
-            msgClass = "red";
+            var msg = "project failed to delete!!!";
+            MsgBoxHelper(msg,"warn","","null",true);
         }
         else if(operation == "view")
         {
@@ -437,16 +493,21 @@
                 bool isCreated = functions.SaveProject(project);
                 if(isCreated)
                 {
-                    iconMsg = "Project progress saved!!!";
-                    msgClass = "green";
+                    var msg = "Project progress saved!!!";
+                    MsgBoxHelper(msg,"valid","","null",true);
                     store.Mutate<Project>("Project",project);
                  }
             }
         }
+        else if(state.Project.Value.Id != "")
+        {
+            var msg = "Project saved success!!!";
+            MsgBoxHelper(msg,"valid","","null",true);  
+        }
         else
         {
-            iconMsg = "Empty project cannot be saved!!!";
-            msgClass = "red";      
+            var msg = "Empty project cannot be saved!!! Kindly click New to start.";
+            MsgBoxHelper(msg,"warn","","null",true);    
         }
     }
     private void LoadSavedProject(Project p)
@@ -470,7 +531,12 @@
             isFiltered = p.IsFiltered;//include isProcessed
             store.Mutate<Project>("Project",p);
             ViewRawData();
-        };
+        }
+        else if(p.Id != "")
+        {
+            ClearAll();
+            store.Mutate<Project>("Project",p);
+        }
     }
     private void ModifyDepthAndTimeValuesAndAppend(string[] values)
     {
@@ -641,8 +707,8 @@
         }
         catch (Exception ex)
         {
-            msgClass = "red";
-            iconMsg = $"Error reading the file: " + ex.Message;
+            var msg = $"Error reading the file: " + ex.Message;
+            MsgBoxHelper(msg,"warn","","null",true);
         }
     }
     private void GetAndSetStrokeCount()
@@ -697,10 +763,16 @@
         }
         store.Mutate<Dictionary<int, string>>("HeaderUnitDict",headerUnitDict);
     }
+    private void _ClearAll()
+    {
+        if(state.IsDataLoaded.Value)
+        {
+            MsgBoxHelper("This will clear the current project and all progress made!!!","warn","","ClearAll",true);
+        }
+    }
     private void ClearAll()
     {
         ClearChart();
-        iconMsg = "";
         store.Mutate<Project>("Project",new());
         store.Mutate<Dictionary<int, string>>("HeaderUnitDict",new());
         store.Mutate<Dictionary<int, string>>("HeaderIndexDict",new());
@@ -723,21 +795,20 @@
     }
     private async Task ShowFileDialog(bool isNewData)
     {
-        await jSRuntime.InvokeVoidAsync("showFileDialog");
         store.Mutate<bool>("IsNewDataClicked",isNewData);
         if(isNewData)
         {
             ClearAll();
-            msgClass = "black";
+            await jSRuntime.InvokeVoidAsync("showFileDialog");
         }
         else if(!isNewData && state.IsDataLoaded.Value && dataArray.Count > 0)
         {
             lastDataArray = dataArray[dataArray.Count - 1];
+            await jSRuntime.InvokeVoidAsync("showFileDialog");
         }
         else if(!isNewData && !state.IsDataLoaded.Value)
         {
-            iconMsg = "Kindly click on New to start a new project";
-            msgClass = "red";
+            MsgBoxHelper("Kindly click on New to start a new project","warn","","null",true);
         }
     }
 }

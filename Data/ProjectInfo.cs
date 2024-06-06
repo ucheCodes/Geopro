@@ -3,7 +3,7 @@ namespace PenPro.Data;
 public class ProjectInfo
 {
     public string Name { get; set;} = "";
-    public string Company { get; set;} = "";
+    public string Client { get; set;} = "";
     public string Contractor { get; set;} = "";
     public string Description { get; set;}  =  "";
     public string Easting { get; set; } = "";

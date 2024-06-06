@@ -9,6 +9,9 @@ window.saveAsFile = function (fileName, fileContent) {
 };
 
 
+/*function openDialog(id) {
+    document.getElementById(id).click();
+}*/
 function showFileDialog() {
     document.getElementById('fileInput').click();
 }
