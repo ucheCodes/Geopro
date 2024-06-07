@@ -17,6 +17,7 @@ builder.Services.AddScoped<IFunctions,Functions>();
 builder.Services.AddScoped<State>();
 builder.Services.AddScoped<WriteToFile>();
 builder.Services.AddScoped<UploadImage>();
+builder.Services.AddScoped<PlotModelService>();
 
 var app = builder.Build();
 

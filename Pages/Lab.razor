@@ -16,6 +16,7 @@
             <button @onclick="EnableAddNewSample"  class="btn">New Test</button>
             <button @onclick="@(() => {navigationManager.NavigateTo("/calculus");})"  class="btn">Show Parameters</button>
             <button @onclick="WriteToCSVFile" class="btn">Save Data</button>
+            <button @onclick="@(() => {navigationManager.NavigateTo("/borelogs");})" class="btn">View Logs</button>
         </div>
         <div class="table large">
             <div class="table-body">

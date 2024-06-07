@@ -118,7 +118,19 @@
             study and work on drifts and zeros
             create boring logs and plot torvane (undrained shear strength (su)), pp and UU
             confirm formula binding relationship of yd, yw and nmc in excel
+            check why stroke info is not updated for the loaded chart used for test
+            compare with new data
             excel data reader for .xls
+        */
+        /*
+         Now that I am working with samples, modify processed such that
+         //No sample, no qnet,no Qt
+         //when populating the bulk density table to be used for populating qnet
+         //use samples end depth as the up bound for the depths and add the bulk density value obtained
+         //i.e for borehole 0 - 3m, every depth below 3m, will take the value of the bulk density for that borehole
+         //rename counter as borehole and let the color rhyme with others. 
+         //modify big graph to take 3 images then copy that header page to counter
+         //process all previous data using the new software
         */
     }
     protected override void OnAfterRender(bool firstRender)
