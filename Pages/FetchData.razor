@@ -12,12 +12,12 @@
 
     protected override void OnInitialized()
     {
-        plotModel = new PlotModel { Title = "Rectangle with Text" };
+        ///plotModel = new PlotModel { Title = "Rectangle with Text" };
 
-        CreateRectangleWithText();
+       plotModel = CreateRectangleWithWrappedText(1, 6, 1, 4);
     }
 
-    private void CreateRectangleWithText()
+    private void CreateRectangleWithTextOld()
     {
         // Define axes
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Minimum = 0, Maximum = 10 });
@@ -49,4 +49,111 @@
         };
         plotModel.Annotations.Add(textAnnotation);
     }
+    //start
+
+//public class PlotModelExample
+//{
+    public PlotModel CreateRectangleWithWrappedText(double minX, double maxX, double minY, double maxY)
+    {
+        var plotModel = new PlotModel { Title = "Rectangles with Hatches and Wrapped Text" };
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 10 });
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0, Minimum = 0, Maximum = 10 });
+
+        // Add rectangle with hatch pattern
+        plotModel.Annotations.Add(CreateRectangle(minX, maxX, minY, maxY, OxyColors.Transparent, HatchStyle.None));
+
+        // Add wrapped text inside the rectangle
+        AddWrappedText(plotModel, "This is a text inside the rectangle that's meant to stay within the bounds of the rectangle and not overflow", minX, maxX, minY, maxY);
+
+        return plotModel;
+    }
+
+    private void AddWrappedText(PlotModel plotModel, string text, double minX, double maxX, double minY, double maxY)
+    {
+        double fontSize = 14;
+        double padding = 2;
+
+        var textLines = WrapText(text, maxX - minX - 2 * padding, fontSize);
+
+        double lineHeight = fontSize * 1.2; // Approximate line height
+        double totalTextHeight = textLines.Count * lineHeight;
+
+        double currentY = maxY - padding; // Start from the top of the rectangle and move down
+
+        foreach (var line in textLines)
+        {
+            var textAnnotation = new TextAnnotation
+            {
+                Text = line,
+                TextPosition = new DataPoint((minX + maxX) / 2, currentY),
+                FontSize = fontSize,
+                FontWeight = FontWeights.Bold,
+                TextHorizontalAlignment = HorizontalAlignment.Center,
+                TextVerticalAlignment = VerticalAlignment.Top,
+                TextColor = OxyColors.Black,
+                Stroke = OxyColors.Transparent
+            };
+
+            plotModel.Annotations.Add(textAnnotation);
+            //currentY -= lineHeight; // Move to the next line
+        }
+    }
+
+    private List<string> WrapText(string text, double maxWidth, double fontSize)
+    {
+        List<string> lines = new List<string>();
+        string[] words = text.Split(' ');
+        string currentLine = string.Empty;
+
+        foreach (var word in words)
+        {
+            string testLine = string.IsNullOrEmpty(currentLine) ? word : currentLine + " " + word;
+            double testWidth = EstimateTextWidth(testLine, fontSize);
+
+            if (testWidth <= maxWidth)
+            {
+                currentLine = testLine;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(currentLine))
+                {
+                    lines.Add(currentLine);
+                }
+                currentLine = word;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(currentLine))
+        {
+            lines.Add(currentLine);
+        }
+
+        return lines;
+    }
+
+    private double EstimateTextWidth(string text, double fontSize)
+    {
+        // This is a rough estimation. You might need to adjust this based on your font and rendering settings.
+        // The constant value here (0.6) can be tweaked to better match your actual text width.
+        return text.Length * fontSize * 0.6;
+    }
+
+    private RectangleAnnotation CreateRectangle(double minX, double maxX, double minY, double maxY, OxyColor color, HatchStyle hatchStyle)
+    {
+        // Implement your rectangle creation logic here
+        return new RectangleAnnotation
+        {
+            MinimumX = minX,
+            MaximumX = maxX,
+            MinimumY = minY,
+            MaximumY = maxY,
+            Fill = color,
+            Stroke = OxyColors.Black,
+            StrokeThickness = 1
+        };
+    }
+//}
+
+    //end
 }

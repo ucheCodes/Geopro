@@ -9,39 +9,58 @@ public class PlotModelService
 {
     public (PlotModel Legend,PlotModel Borehole) GenerateBoreholeLogs(List<SampleInfo> sample, double yMax)
     {
-        var plotModel = new PlotModel();
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 2, Title="Strata"});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0, Minimum = 0,Maximum = yMax,Title="Penetration (m)"});
+        var plotModel = new PlotModel();//TitlePosition = 0.5,AxisTitleDistance = 10
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 2,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata",TitleFontWeight = FontWeights.Bold});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = 0,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
         PlotStratigraphy(plotModel, sample,yMax);
         var legendModel = PlotLegends();
         return (legendModel,plotModel);
     }
+    private Dictionary<string,(HatchStyle hatchStyle, OxyColor color,string strata)> GetAllLegend()
+    {
+        Dictionary<string,(HatchStyle hatchStyle, OxyColor color,string strata)> legend = new Dictionary<string, (HatchStyle hatchStyle, OxyColor color, string strata)>()
+        {
+            {"cpt", new (HatchStyle.Horizontal,OxyColors.Red,"CPT")},
+            {"sand", new (HatchStyle.Dashes,OxyColors.Teal,"Sand")},
+            {"clayey sand", new (HatchStyle.Dots,OxyColors.RoyalBlue,"Clayey Sand")},
+            {"clay", new (HatchStyle.X,OxyColors.ForestGreen,"Clay")},
+            {"sandy clay", new (HatchStyle.SquareX,OxyColors.DarkGreen,"Sandy Clay")},
+            {"silt", new (HatchStyle.Mixed,OxyColors.Tan,"Silt")},
+            {"granite", new (HatchStyle.ForwardDiagonal,OxyColors.DarkRed,"Granite")},
+            {"boulders", new (HatchStyle.Square,OxyColors.Navy,"Boulders")},
+            {"rock", new (HatchStyle.Cross,OxyColors.YellowGreen,"Rock")},
+        };
+        return legend;
+    }
+    private  (HatchStyle hatchStyle, OxyColor color,string strata) GetLegend(string key)
+    {
+        var legend  = GetAllLegend();
+        if (legend.ContainsKey(key))
+        {
+            return legend[key];
+        }
+        return new();
+    }
     private PlotModel PlotLegends()
     {
         var plotModel = new PlotModel();
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 2, Title="Legend"});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0, Minimum = 0,Maximum = 10,Title="Insitu test legend"});
-        List<(HatchStyle hatchStyle, OxyColor color,string strata)> legend = new  List<(HatchStyle hatchStyle, OxyColor color, string strata)>()
-        {
-            new (HatchStyle.ForwardDiagonal,OxyColors.Red,"CPT"),
-            /*new (HatchStyle.Dashes,OxyColors.Blue,"Sand"),
-            new (HatchStyle.Dots,OxyColors.Green,"Clay"),*/
-        };
-        //double position = 0;
-        int count =0;
-        foreach (var item in legend)
-        {
-                /*AddLegendText(plotModel, item.strata,0,2,position, position += 0.5);//legendary
-                plotModel.Annotations.Add(CreateRectangle(0, 2,position, position += 1, item.color, item.hatchStyle));  */
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 2,IsZoomEnabled = false, IsPanEnabled = false, Title="Legend",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13,MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = 0,Maximum = 9,Title="Insitu test legend",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13,MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot});
+        var legend = GetAllLegend();
 
+        int count = 0;
+        foreach (var item in legend.Values)
+        {
+                /*AddLegendText(plotModel, item.strata,0,2,position, position += 0.5);//legendary //double position = 0;
+                plotModel.Annotations.Add(CreateRectangle(0, 2,position, position += 1, item.color, item.hatchStyle));  */
                 AddLegendText(plotModel, item.color, item.hatchStyle, item.strata,0,2,count, count + 1);
-                //plotModel.Annotations.Add(CreateRectangle(0, 2,count, count + 1, item.color, item.hatchStyle)); 
                 count++;
         }
         return plotModel;
     }
     private void AddLegendText(PlotModel plotModel,OxyColor color, HatchStyle hatchStyle, string text, double minX,double maxX,double minY, double maxY)
     {
+        plotModel.Annotations.Add(CreateRectangle(minX, maxX, minY, maxY, color, hatchStyle));
         var textAnnotation = new TextAnnotation
         {
             Text = text,
@@ -50,57 +69,41 @@ public class PlotModelService
             FontWeight = FontWeights.Bold,
             TextHorizontalAlignment = HorizontalAlignment.Center,
             TextVerticalAlignment = VerticalAlignment.Middle,
-            TextColor = OxyColors.Black,
+            TextColor = OxyColors.Wheat,
             Stroke = OxyColors.Transparent
         };
         plotModel.Annotations.Add(textAnnotation);
-        plotModel.Annotations.Add(CreateRectangle(minX, maxX, minY, maxY, color, hatchStyle));
     }
     private void PlotStratigraphy(PlotModel plotModel, List<SampleInfo> sample, double maxDepth)
     {
-        OxyColor color; HatchStyle hatchStyle;
         double gap = 0; double previousStartDepth = 0; double previousEndDepth = 0;
         double x0 = 0; double x1 = 2;
         double maxBoreholeDepth = sample.Max(x => x.BoreholeEndDepth);
+        (HatchStyle hatchStyle, OxyColor color,string strata) legend = new (HatchStyle.None,OxyColors.Transparent,"");
         foreach (var data in sample)
         {
             gap = data.BoreholeStartDepth - previousEndDepth;
             if (gap >= 1)//indicates CPT stroke
             {
-                color = OxyColors.Red; hatchStyle = HatchStyle.ForwardDiagonal;
-                plotModel.Annotations.Add(CreateRectangle(x0, x1, previousEndDepth, data.BoreholeStartDepth, color, hatchStyle));
+                legend = GetLegend("cpt");
+                plotModel.Annotations.Add(CreateRectangle(x0, x1, previousEndDepth, data.BoreholeStartDepth, legend.color, legend.hatchStyle));
             }
-            else if(gap >= 2){}
-            switch (data.SampleType)
-            {
-                case "sand"://add others
-                    color = OxyColors.Blue;
-                    hatchStyle = HatchStyle.Dashes;
-                break;
-                case "clay":
-                    color = OxyColors.Green;
-                    hatchStyle = HatchStyle.Dots;
-                break;
-                default:
-                color = OxyColors.Transparent;
-                hatchStyle = HatchStyle.None;
-                break;
-            }
+            legend = GetLegend(data.SampleType);
             previousStartDepth = data.BoreholeStartDepth; previousEndDepth = data.BoreholeEndDepth;
-            plotModel.Annotations.Add(CreateRectangle(x0, x1, data.BoreholeStartDepth, data.BoreholeEndDepth, color, hatchStyle));
+            plotModel.Annotations.Add(CreateRectangle(x0, x1, data.BoreholeStartDepth, data.BoreholeEndDepth, legend.color, legend.hatchStyle));
         }
         //This will plot if the composite borehole ends with CPT
         if (maxDepth > maxBoreholeDepth)
         {
-            color = OxyColors.Red; hatchStyle = HatchStyle.ForwardDiagonal;
-            plotModel.Annotations.Add(CreateRectangle(x0, x1, maxBoreholeDepth, maxDepth, color, hatchStyle));
+            legend = GetLegend("cpt");
+            plotModel.Annotations.Add(CreateRectangle(x0, x1, maxBoreholeDepth, maxDepth, legend.color, legend.hatchStyle));
         }
     }
     public PlotModel PlotConeResistance(List<double> depth,List<double> qc, List<double> qt, List<double> qnet)
     {
-        var plotModel = new PlotModel {Title = "Cone Resistance"};
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,Title="Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot});
+        var plotModel = new PlotModel ();
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         var legend = new Legend
         {
@@ -154,17 +157,20 @@ public class PlotModelService
     {
         var plotModel = new PlotModel {Title = "Borehole Logs"};
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 10, Title="Soil Stratigraphy",MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0, Minimum = 0, Maximum = 10,Title="Penetration (m)",MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0, Minimum = 0, Maximum = 15,Title="Penetration (m)",MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
 
         plotModel.Annotations.Add(CreateRectangle(1, 2, 0, 2.5, OxyColors.Red, HatchStyle.Cross));
         plotModel.Annotations.Add(CreateRectangle(1, 2, 2.5, 5, OxyColors.Green, HatchStyle.BackwardDiagonal));
         plotModel.Annotations.Add(CreateRectangle(1, 2, 5, 7.5, OxyColors.Blue, HatchStyle.ForwardDiagonal));
-        plotModel.Annotations.Add(CreateRectangle(1, 2, 7.5, 10, OxyColors.Yellow, HatchStyle.Horizontal));
+        plotModel.Annotations.Add(CreateRectangle(1, 2, 7.5, 10, OxyColors.Brown, HatchStyle.Horizontal));
+        plotModel.Annotations.Add(CreateMixedHatch(1, 2, 10, 14,OxyColors.HotPink));
 
         plotModel.Annotations.Add(CreateRectangle(4, 5, 0, 2.5, OxyColors.Red, HatchStyle.Cross));
         plotModel.Annotations.Add(CreateRectangle(4, 5, 2.5, 5, OxyColors.Green, HatchStyle.Dots));
         plotModel.Annotations.Add(CreateRectangle(4, 5, 5, 7.5, OxyColors.Blue, HatchStyle.Dashes));
         plotModel.Annotations.Add(CreateRectangle(4, 5, 7.5, 10, OxyColors.Yellow, HatchStyle.Plus));
+        plotModel.Annotations.Add(CreateRectangle(4, 5, 10, 14, OxyColors.Brown, HatchStyle.SquareX));
+        //plotModel.Annotations.Add(CreateDiagonalSquare(4, 5, 10, 14,OxyColors.Gold));
 
         return plotModel;
     }
@@ -204,7 +210,6 @@ public class PlotModelService
 
     private double EstimateTextWidth(string text, double fontSize)
     {
-        // This is a simple approximation. You may need to adjust the factor for more accuracy.
         return text.Length * fontSize * 0.6;
     }
     private CustomRectangleAnnotation CreateRectangle(double x0, double x1, double y0, double y1, OxyColor fillColor, HatchStyle hatchStyle)
@@ -219,6 +224,29 @@ public class PlotModelService
             Stroke = OxyColors.Black,
             StrokeThickness = 1,
             HatchStyle = hatchStyle,
+            HatchColor = OxyColors.Black
+        };
+    }
+    private CustomMixedHatch CreateMixedHatch(double x0, double x1, double y0, double y1, OxyColor color)
+    {
+        return new CustomMixedHatch
+        {
+            MinimumX = x0,
+            MaximumX = x1,
+            MinimumY = y0,
+            MaximumY = y1,
+            Fill = color,
+            HatchColor = OxyColors.Black
+        };
+    }
+    private DiagonalSquaresHatch CreateDiagonalSquare(double x0, double x1, double y0, double y1, OxyColor color)
+    {
+        return new DiagonalSquaresHatch
+        {
+            MinimumX = x0,
+            MaximumX = x1,
+            MinimumY = y0,
+            MaximumY = y1,
             HatchColor = OxyColors.Black
         };
     }

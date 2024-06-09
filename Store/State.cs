@@ -20,7 +20,7 @@ public class State
   public StateParameters<Dictionary<int, List<double>>> FilteredAndComputedCPTDataInColumnsDict { get;set;} = new (new());
   public StateParameters<Project> Project{ get;set;} = new StateParameters<Project>(new());
   public StateParameters<Project> SaveProjectParameter{ get;set;} = new StateParameters<Project>(new());
-  public StateParameters<Tuple<string,string>> ChartImages{ get;set;} = new StateParameters<Tuple<string,string>>(new("",""));
+  public StateParameters<Tuple<string,string,string>> ChartImages{ get;set;} = new StateParameters<Tuple<string,string,string>>(new("","",""));
 }
 #endregion
 

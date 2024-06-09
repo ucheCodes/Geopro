@@ -9,8 +9,13 @@
     {
         var info = state.Project.Value.Info;
         <div class="chart-info">
-            <div class="img">
-                <img @onclick="(() => {ChangeImage(1);})" src="@state.ChartImages.Value.Item1"/>
+            <div class="d-flex">
+                <div class="img">
+                    <img @onclick="(() => {ChangeImage(1);})" src="@state.ChartImages.Value.Item1"/>
+                </div>
+                <div class="img">
+                    <img @onclick="(() => {ChangeImage(2);})" src="@state.ChartImages.Value.Item2"/>
+                </div>
             </div>
             <div class="label">
                 <label class="b1">Project Title: @info.Title</label>
@@ -27,7 +32,7 @@
                 <br>
             </div>
             <div class="img">
-                <img @onclick="(() => {ChangeImage(2);})" src="@state.ChartImages.Value.Item2"/>
+                <img @onclick="(() => {ChangeImage(3);})" src="@state.ChartImages.Value.Item3"/>
             </div>
         </div>
     }
@@ -400,9 +405,9 @@
         rfModel.Series.Add(rfSeries);
 
         strokeModel = new PlotModel(){Title = "CPT Stroke"};
-       var strokeXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1, Minimum = 0, Maximum = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Stroke count"};
+       var strokeXAxis = new LinearAxis(){Position = AxisPosition.Top, StartPosition = 0, EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Minimum = 0, Maximum = 1,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Stroke count"};
        strokeModel.Axes.Add(strokeXAxis);
-       var strokeYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,Minimum = 0, MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
+       var strokeYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,Minimum = 0,IsZoomEnabled = false, IsPanEnabled = false, MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
        strokeModel.Axes.Add(strokeYAxis);
        strokeSeries = new LineSeries
         {
@@ -431,11 +436,15 @@
                 var tupleImg = state.ChartImages.Value;
                 if(imgId == 1)
                 {
-                    store.Mutate<Tuple<string,string>>("ChartImages", new (imgData,tupleImg.Item2));
+                    store.Mutate<Tuple<string,string,string>>("ChartImages", new (imgData,tupleImg.Item2,tupleImg.Item3));
                 }
                 else if(imgId == 2)
                 {
-                    store.Mutate<Tuple<string,string>>("ChartImages", new (tupleImg.Item1, imgData));
+                    store.Mutate<Tuple<string,string,string>>("ChartImages", new (tupleImg.Item1, imgData,tupleImg.Item3));
+                }
+                else if(imgId == 3)
+                {
+                    store.Mutate<Tuple<string,string,string>>("ChartImages", new (tupleImg.Item1,tupleImg.Item2, imgData));
                 }
                 StateHasChanged();
             }

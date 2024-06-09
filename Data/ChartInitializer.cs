@@ -15,22 +15,22 @@ static class ChartInitializer
         var plotModel = new PlotModel {  Title = plotModelTitle};
         if (isXAxisLog)
         {
-            var XAxis = new LogarithmicAxis(){Position = xPosition, StartPosition = xStartPosition, EndPosition = xEndPosition,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = xTitle};
+            var XAxis = new LogarithmicAxis(){Position = xPosition, StartPosition = xStartPosition, EndPosition = xEndPosition,IsZoomEnabled = false, IsPanEnabled = false,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = xTitle};
             plotModel.Axes.Add(XAxis);
         }
         else
         {
-            var XAxis = new LinearAxis(){Position = xPosition, StartPosition = xStartPosition, EndPosition = xEndPosition,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = xTitle};
+            var XAxis = new LinearAxis(){Position = xPosition, StartPosition = xStartPosition, EndPosition = xEndPosition,IsZoomEnabled = false, IsPanEnabled = false,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = xTitle};
             plotModel.Axes.Add(XAxis);
         }
         if (isYAxisLog)
         {
-            var YAxis = new LogarithmicAxis(){Position = yPosition, StartPosition = yStartPosition, EndPosition = yEndPosition,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = yTitle};
+            var YAxis = new LogarithmicAxis(){Position = yPosition, StartPosition = yStartPosition, EndPosition = yEndPosition,IsZoomEnabled = false, IsPanEnabled = false,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = yTitle};
             plotModel.Axes.Add(YAxis);
         }
         else
         {
-            var YAxis = new LinearAxis(){Position = yPosition, StartPosition = yStartPosition, EndPosition = yEndPosition,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = yTitle};
+            var YAxis = new LinearAxis(){Position = yPosition, StartPosition = yStartPosition, EndPosition = yEndPosition,IsZoomEnabled = false, IsPanEnabled = false,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = yTitle};
             plotModel.Axes.Add(YAxis);
         }
         var series = new LineSeries

@@ -1,0 +1,181 @@
+﻿@page "/borelogs"
+@inject DatabaseService database
+@inject PlotModelService PlotModelService
+@inject NavigationManager navigationManager
+@inject IJSRuntime jSRuntime
+@inject IStore store
+@inject State state
+
+<InputFile type="file" id="image" style="display: none;" OnChange="@LoadFile" accept=".png,.jpg,.jpeg" />
+<div class="graph active">
+    <span @onclick="@(() => {navigationManager.NavigateTo("/lab");})" class="x red  @((state.Project.Value.Info.Name != "") ? "active" : "")">X</span>
+        <span @onclick="@(e =>Screenshot("chart3"))" class="camera @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-camera-retro"></i></span>
+    @if(state.Project.Value.Info.Title != "")
+    {
+        var info = state.Project.Value.Info;
+        <div class="chart-info">
+            <div class="d-flex">
+                <div class="img">
+                    <img @onclick="(() => {ChangeImage(1);})" src="@state.ChartImages.Value.Item1"/>
+                </div>
+                <div class="img">
+                    <img @onclick="(() => {ChangeImage(2);})" src="@state.ChartImages.Value.Item2"/>
+                </div>
+            </div>
+            <div class="label">
+                <label class="b1">Project Title: @info.Title</label>
+                <br><label class="b2">Client: @info.Client</label>&nbsp;&nbsp;
+                <label class="b2">Contractor: @info.Contractor</label><br>
+                <label class="b3">Site Name: @info.SiteName</label>&nbsp;&nbsp;
+                <label class="b3">Location: @info.Location</label>
+                <br><label class="b3">E: @info.Easting</label>&nbsp;&nbsp;
+                <label class="b3">N: @info.Northing</label>&nbsp;&nbsp;
+                <label class="b3">Water column depth: @info.WaterDepth m</label>&nbsp;&nbsp;
+                <label class="b3">Depth of Drilling: @info.DepthDrilled m</label>&nbsp;&nbsp;
+                <label class="b3">Borehole Id: @info.TestNumber</label><br>
+                <b class="@msgClass">@msg</b>
+                <br>
+            </div>
+            <div class="img">
+                <img @onclick="(() => {ChangeImage(3);})" src="@state.ChartImages.Value.Item3"/>
+            </div>
+        </div>
+    }
+
+    <div id="chart3">
+        <BlazorPlotView Model="@legendModel" Width="140" Height="555"/>
+        <BlazorPlotView Model="@boreholeModel" Width="150" Height="555"/>
+        @if(state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0)
+        {
+            <BlazorPlotView Model="@coneModel" Width="300" Height="555" />
+        }
+    </div>
+</div>
+@code{
+    //Find out why legend log is throwing exception on zoom
+    //check if the other charts do this and fix
+    PlotModel legendModel = new PlotModel {Title = "Legends" };//ask gpt if I can prevent oxyplot scale zoom and resize
+    PlotModel boreholeModel = new PlotModel {Title = "Borehole"};
+    PlotModel coneModel = new PlotModel { Title = "Resistance" };
+    int count = 0;
+    string msg = "";
+    int imgId = 0;
+    string msgClass = "";
+    List<SampleInfo> sotr = new List<SampleInfo>();
+    protected override void OnInitialized()
+    {
+        //coneModel = PlotModelService.CreatePlotModel();
+        //coneModel = PlotConeModel();
+       //plotModel = PlotModelService.CreateRectangleWithText(3,6,1,3);
+       GenerateBoreholeLogs();
+
+    }
+     protected override void OnAfterRender(bool firstRender)
+     {
+        count++;
+     }
+    private PlotModel PlotConeModel()
+    {
+        var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
+        if(computedCol != null && computedCol.Count() > 11)
+        {
+            List<double> depth = computedCol[0];
+            List<double> qc = computedCol[1];
+            List<double> qt = computedCol[10];
+            List<double> qnet = computedCol[11];
+            if(depth.Count > 0 && qc.Count > 0 && qt.Count > 0 && qnet.Count > 0)
+            {
+                var cm = PlotModelService.PlotConeResistance(depth, qc,qt, qnet);
+                return cm;
+            }
+        }
+        return new PlotModel();
+    }
+    private void GenerateBoreholeLogs()
+    {
+        try
+        {
+            //Get sotr from db in place of this sample
+            var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
+            double cptMaxDepth = 30; double maxBoreholeDepth = 0;
+            var sample = new List<SampleInfo>()
+            {
+                new SampleInfo(){BoreholeStartDepth = 0, BoreholeEndDepth = 3, SampleType = "clay"},
+                new SampleInfo(){BoreholeStartDepth = 3, BoreholeEndDepth = 6, SampleType = "sand"},
+                new SampleInfo(){BoreholeStartDepth = 7, BoreholeEndDepth = 10, SampleType = "sandy clay"},
+                new SampleInfo(){BoreholeStartDepth = 10, BoreholeEndDepth = 15, SampleType = "clayey sand"},
+                new SampleInfo(){BoreholeStartDepth = 15, BoreholeEndDepth = 16, SampleType = "sand"},
+                new SampleInfo(){BoreholeStartDepth = 16, BoreholeEndDepth = 20, SampleType = "silt"},
+                new SampleInfo(){BoreholeStartDepth = 20, BoreholeEndDepth = 23, SampleType = "granite"},
+                new SampleInfo(){BoreholeStartDepth = 25, BoreholeEndDepth = 30, SampleType = "boulders"},
+                new SampleInfo(){BoreholeStartDepth = 34, BoreholeEndDepth = 42, SampleType = "rock"},
+            };
+            double sampleMaxDepth = sample.Max(x => x.BoreholeEndDepth);
+            if(computedCol.ContainsKey(0) && computedCol[0].Count > 0)//cpt depth
+            {
+                cptMaxDepth = computedCol[0].Max();
+            }
+            if(cptMaxDepth > sampleMaxDepth)
+            {
+                maxBoreholeDepth = cptMaxDepth;
+            }
+            else
+            {
+                maxBoreholeDepth = sampleMaxDepth;
+            }
+            var plotModel = PlotModelService.GenerateBoreholeLogs(sample,maxBoreholeDepth);
+            legendModel = plotModel.Legend;
+            boreholeModel = plotModel.Borehole;
+            coneModel = PlotConeModel();
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }
+    private async void ChangeImage(int id)
+    {
+        imgId = id; msg = ""; msgClass = "";
+        await jSRuntime.InvokeVoidAsync("openImageDialog");
+    }
+    private async void LoadFile(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        try
+        {
+            using(var memoryStream = new MemoryStream())
+            {
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+                var array = memoryStream.ToArray();
+                var imgData = "data:image/png;base64,"+Convert.ToBase64String(array);
+                var tupleImg = state.ChartImages.Value;
+                if(imgId == 1)
+                {
+                    store.Mutate<Tuple<string,string,string>>("ChartImages", new (imgData,tupleImg.Item2,tupleImg.Item3));
+                }
+                else if(imgId == 2)
+                {
+                    store.Mutate<Tuple<string,string,string>>("ChartImages", new (tupleImg.Item1, imgData,tupleImg.Item3));
+                }
+                else if(imgId == 3)
+                {
+                    store.Mutate<Tuple<string,string,string>>("ChartImages", new (tupleImg.Item1,tupleImg.Item2, imgData));
+                }
+                StateHasChanged();
+            }
+        }
+        catch(Exception er)
+        {
+            msg = er.Message.ToString();
+            msgClass = "red";
+        }
+    }
+    private async void Screenshot(string id)
+    {
+        //if(sotr.Count > 0)
+       // {
+            await jSRuntime.InvokeVoidAsync("screenShot",id);
+            navigationManager.NavigateTo($"/output");
+        //}
+    }
+}

@@ -57,6 +57,10 @@
     flex: 0 0 55%;
     overflow: auto;
 }
+.d-flex{
+  display: flex;
+  padding: 0px;
+}
 .icons{
     display: flex;
 }

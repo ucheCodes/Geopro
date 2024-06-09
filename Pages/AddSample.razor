@@ -32,9 +32,13 @@
             <select @bind="sampleType">
                 <option value="">Select Sample Stratigraphy</option>
                 <option value="clay">Clay</option>
+                <option value="sandy clay">Sandy Clay</option>
                 <option value="sand">Sand</option>
+                <option value="clayey sand">Clayey Sand</option>
                 <option value="silt">Silt</option>
-                <option value="Grains">Grains</option>
+                <option value="granite">Granite</option>
+                <option value="boulders">Boulders</option>
+                <option value="rock">Rock</option>
             </select>
         </div>
         <div class="input-group">
@@ -264,7 +268,7 @@
 
         if(state.Project.Value.Id != "" && sampleType != "" && testId != "")
         {
-            if(sr > 0  && bsd >= 0 && bed > 0)
+            if(sr > 0  && bsd >= 0 && bed > 0)//put conditions that will ensure bed > bsd for the purpose of my code
             {
                 sotrMsg = "";
                 msgClass = "";

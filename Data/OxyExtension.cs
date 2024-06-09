@@ -22,7 +22,7 @@ public class CustomRectangleAnnotation : RectangleAnnotation
             var maxScreenPoint = Transform(max);
             var rect = new OxyRect(minScreenPoint, maxScreenPoint);
 
-                        switch (HatchStyle)
+            switch (HatchStyle)
             {
                 case HatchStyle.Cross:
                     DrawCrossHatch(rc, rect);
@@ -44,6 +44,18 @@ public class CustomRectangleAnnotation : RectangleAnnotation
                     break;
                 case HatchStyle.Plus:
                     DrawPlusHatch(rc, rect);
+                    break;
+                case HatchStyle.Mixed:
+                    DrawMixedHatch(rc, rect);
+                    break;
+                case HatchStyle.Square:
+                    Magic(rc, rect,"square");
+                    break;
+                case HatchStyle.X:
+                    Magic(rc, rect,"X");
+                    break;
+                case HatchStyle.SquareX:
+                    Magic(rc, rect,"both");
                     break;
             }
         }
@@ -182,6 +194,99 @@ public class CustomRectangleAnnotation : RectangleAnnotation
             rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(x, rect.Top), new ScreenPoint(x, rect.Bottom) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
         }
     }
+    private void DrawMixedHatch(IRenderContext rc, OxyRect rect)
+    {
+        double step = 20; // Distance between the centers of the dashes and dots
+        double dashLength = 8; // Length of each dash
+        double dotRadius = 2; // Radius of each dot
+
+        for (double y = rect.Top + step / 2; y <= rect.Bottom; y += step)
+        {
+            for (double x = rect.Left; x <= rect.Right; x += step)
+            {
+                // Draw dot
+                var dotRect = new OxyRect(x - dotRadius, y - dotRadius, 2 * dotRadius, 2 * dotRadius);
+                rc.DrawEllipse(dotRect, HatchColor, OxyColors.Transparent, 1, EdgeRenderingMode.PreferSharpness);
+                // Draw line
+                double dashEnd = Math.Min(x + dashLength, rect.Right);
+                rc.DrawLine(new List<ScreenPoint>
+                {
+                    new ScreenPoint(x, y),
+                    new ScreenPoint(dashEnd, y)
+                }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
+            }
+        }
+    }
+
+    private void Magic(IRenderContext rc, OxyRect rect, string displayType)
+    {
+        double step = 20; // Distance between the centers of the elements
+        double squareSize = 5; // Size of the small squares
+
+        // Define the clipping rectangle
+        rc.PushClip(rect);
+
+        for (double y = rect.Top + step / 2; y < rect.Bottom; y += step)
+        {
+            for (double x = rect.Left + step / 2; x < rect.Right; x += step)
+            {
+                MagicHelper(rc, x, y, step, squareSize,displayType);
+            }
+        }
+
+        // Pop the clipping rectangle
+        rc.PopClip();
+    }
+    private void MagicHelper(IRenderContext rc,double x, double y, double step, double squareSize, string displayType)
+    {
+        if (displayType == "both")
+        {
+            // Create a rectangle for each small square
+            var squareRect = new OxyRect(x - squareSize / 2, y - squareSize / 2, squareSize, squareSize);
+            rc.DrawRectangle(squareRect, HatchColor, OxyColors.Transparent, 1, EdgeRenderingMode.PreferSharpness);
+
+            // Create bounding rect for the diagonal lines
+            var lineRect = new OxyRect(x - step / 2, y - step / 2, step, step);
+
+            // Draw diagonal lines within the clipping bounds
+            rc.DrawLine(new List<ScreenPoint>
+            {
+                new ScreenPoint(lineRect.Left, lineRect.Top),
+                new ScreenPoint(lineRect.Right, lineRect.Bottom)
+            }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
+
+            rc.DrawLine(new List<ScreenPoint>
+            {
+                new ScreenPoint(lineRect.Right, lineRect.Top),
+                new ScreenPoint(lineRect.Left, lineRect.Bottom)
+            }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
+        }
+        else if (displayType == "square")
+        {
+            // Create a rectangle for each small square
+            var squareRect = new OxyRect(x - squareSize / 2, y - squareSize / 2, squareSize, squareSize);
+            rc.DrawRectangle(squareRect, HatchColor, OxyColors.Transparent, 1, EdgeRenderingMode.PreferSharpness);
+        }
+        else if (displayType == "X")
+        {
+            // Create bounding rect for the diagonal lines
+            var lineRect = new OxyRect(x - step / 2, y - step / 2, step, step);
+            // Draw diagonal lines within the clipping bounds
+            rc.DrawLine(new List<ScreenPoint>
+            {
+                new ScreenPoint(lineRect.Left, lineRect.Top),
+                new ScreenPoint(lineRect.Right, lineRect.Bottom)
+            }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
+
+            rc.DrawLine(new List<ScreenPoint>
+            {
+                new ScreenPoint(lineRect.Right, lineRect.Top),
+                new ScreenPoint(lineRect.Left, lineRect.Bottom)
+            }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
+        }
+    }
+
+
 
     private void ClipLine(ref ScreenPoint p1, ref ScreenPoint p2, OxyRect rect)
     {
@@ -285,101 +390,9 @@ public enum HatchStyle
     Horizontal,
     Dots,
     Dashes,
-    Plus
+    Plus,
+    Mixed,
+    Square,
+    X,
+    SquareX,
 }
-
-
-
-
-
-/*
-//Previous lines of code
-public class CustomRectangleAnnotation : RectangleAnnotation
-{
-    public HatchStyle HatchStyle { get; set; }
-    public OxyColor HatchColor { get; set; } = OxyColors.Black;
-
-    public override void Render(IRenderContext rc)
-    {
-        base.Render(rc);
-
-        if (HatchStyle != HatchStyle.None)
-        {
-            var min = new DataPoint(MinimumX, MinimumY);
-            var max = new DataPoint(MaximumX, MaximumY);
-            var minScreenPoint = Transform(min);
-            var maxScreenPoint = Transform(max);
-            var rect = new OxyRect(minScreenPoint, maxScreenPoint);
-
-            switch (HatchStyle)
-            {
-                case HatchStyle.Cross:
-                    DrawCrossHatch(rc, rect);
-                    break;
-                case HatchStyle.BackwardDiagonal:
-                    DrawBackwardDiagonalHatch(rc, rect);
-                    break;
-                case HatchStyle.ForwardDiagonal:
-                    DrawForwardDiagonalHatch(rc, rect);
-                    break;
-                case HatchStyle.Horizontal:
-                    DrawHorizontalHatch(rc, rect);
-                    break;
-            }
-        }
-    }
-
-    private void DrawCrossHatch(IRenderContext rc, OxyRect rect)
-    {
-        for (double y = rect.Top; y <= rect.Bottom; y += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(rect.Left, y), new ScreenPoint(rect.Right, y) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-        for (double x = rect.Left; x <= rect.Right; x += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(x, rect.Top), new ScreenPoint(x, rect.Bottom) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-    }
-
-    private void DrawBackwardDiagonalHatch(IRenderContext rc, OxyRect rect)
-    {
-        for (double y = rect.Top; y <= rect.Bottom; y += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(rect.Left, y), new ScreenPoint(rect.Right, y - (rect.Width)) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-        for (double x = rect.Left; x <= rect.Right; x += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(x, rect.Bottom), new ScreenPoint(x + (rect.Height), rect.Top) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-    }
-
-    private void DrawForwardDiagonalHatch(IRenderContext rc, OxyRect rect)
-    {
-        for (double y = rect.Top; y <= rect.Bottom; y += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(rect.Right, y), new ScreenPoint(rect.Left, y - (rect.Width)) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-        for (double x = rect.Left; x <= rect.Right; x += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(x, rect.Top), new ScreenPoint(x - (rect.Height), rect.Bottom) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-    }
-
-    private void DrawHorizontalHatch(IRenderContext rc, OxyRect rect)
-    {
-        for (double y = rect.Top; y <= rect.Bottom; y += 10)
-        {
-            rc.DrawLine(new List<ScreenPoint> { new ScreenPoint(rect.Left, y), new ScreenPoint(rect.Right, y) }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
-        }
-    }
-}
-
-public enum HatchStyle
-{
-    None,
-    Cross,
-    BackwardDiagonal,
-    ForwardDiagonal,
-    Horizontal
-}
-*/

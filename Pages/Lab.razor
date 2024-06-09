@@ -16,7 +16,7 @@
             <button @onclick="EnableAddNewSample"  class="btn">New Test</button>
             <button @onclick="@(() => {navigationManager.NavigateTo("/calculus");})"  class="btn">Show Parameters</button>
             <button @onclick="WriteToCSVFile" class="btn">Save Data</button>
-            <button @onclick="@(() => {navigationManager.NavigateTo("/borelogs");})" class="btn">View Logs</button>
+            <button @onclick="ShowBoreholeLogs" class="btn">View Logs</button>
         </div>
         <div class="table large">
             <div class="table-body">
@@ -217,6 +217,9 @@
             case "SaveNewProject":
                 SaveNewProject();
             break;
+            case "ShowLogs":
+                ShowLogs();
+            break;
             case "Delete":
                 Delete(parameter);
             break;
@@ -235,6 +238,10 @@
          allowSampleEdit = false; 
          title = "";
          sotr = new();
+    }
+    private void ShowLogs()
+    {
+        navigationManager.NavigateTo("/borelogs");//or disable visibility active status toggler
     }
     private void UpdateSotr(SampleInfo updatedSotr)
     {
@@ -264,6 +271,18 @@
         if(csvData != "")
         {
             fileWriter.WriteToCSVFile(csvData);
+        }
+    }
+    private void ShowBoreholeLogs()
+    {
+        if(state.FilteredAndComputedCPTDataInColumnsDict.Value.Count == 0)
+        {
+            string okVal = "ShowLogs";
+            MsgBoxHelper("No processed CPT data for borehole Logs!!! click Ok to proceed and continue to process CPT.","warn","/",okVal,true);
+        }
+        else
+        {
+            navigationManager.NavigateTo("/borelogs");
         }
     }
     public void Dispose()
