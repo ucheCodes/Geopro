@@ -42,13 +42,17 @@
                             <tr>
                                 <td>@count</td>
                                 <td>@s.Date.ToString("dd/MM/yyyy")</td>
-                                <td>@s.Date.ToString("hh:mm tt")</td>
+                                <td>@state.Project.Value.Info.TestNumber</td>
+                                <td>@state.Project.Value.Info.Easting</td>
+                                <td>@state.Project.Value.Info.Northing</td>
                                 <td>@s.TestId</td>
                                 <td>@s.BoreholeStartDepth</td>
                                 <td>@s.BoreholeEndDepth</td>
                                 <td>@s.SampleRecovery</td>
+                                <td>@s.SampleDrillOut</td>
                                 <td>@s.SampleType</td>
-                                <td>@s.ContainsCarbonate</td>
+                                @if(s.SampleType == "sample"){<td>@s.ContainsCarbonate</td>}
+                                 else{<td>Nil</td>}
                                 <td @onclick="(() => Edit(s.Id))" class="icon"><i class="fas fa-edit green"></i></td>
                                 <td @onclick="(() => _Delete(s.Id))" class="icon"><i class="fas fa-trash red"></i></td>
                                 <td @onclick="(() => {showSampleImage = true; sampleImagePath = s.SampleImagePath;})" class="img"><img src="@s.SampleImagePath"></td>
@@ -98,7 +102,7 @@
     List<SampleInfo> allSOTR = new();
     List<string> sampleHeaders = new () 
         {
-            "S/N", "Date", "Time", "Test Id", "Start depth (m)", "End Depth (m)", "Recovery (cm)", "Soil Type", "Contains Carbonate","Edit","Delete","Sample Image", "Description"
+            "S/N", "Date", "Borehole Id", "Easting","Northing","Test Id", "Start depth (m)", "End Depth (m)", "Recovery (cm)","Test Drill out", "Test Type", "Contains Carbonate","Edit","Delete","Sample Image", "Description"
         };
     List<string> Calculus = new()
     {
@@ -164,7 +168,7 @@
         }
         else
         {
-            MsgBoxHelper("Empty Project, click Ok to save and start a new project","warn","","SaveNewProject",true);
+            MsgBoxHelper("Borehole Test Information needed! \n click Ok to provide this information and Proceed.","warn","","SaveNewProject",true);
         }
     }
     private void MsgBoxHelper(string info, string type, string route, string ok, bool show)
@@ -241,7 +245,7 @@
     }
     private void ShowLogs()
     {
-        navigationManager.NavigateTo("/borelogs");//or disable visibility active status toggler
+        navigationManager.NavigateTo("/borelogs");
     }
     private void UpdateSotr(SampleInfo updatedSotr)
     {
@@ -263,22 +267,25 @@
     }
     private void BuildCsvString(int count,SampleInfo s)
     {
-        string line = $"{count},{s.Date.ToString("dd/MM/yyyy")},{s.Date.ToString("hh:mm tt")},{s.TestId},{s.BoreholeStartDepth},{s.BoreholeEndDepth},{s.SampleRecovery},{s.SampleType},{s.ContainsCarbonate},{s.SampleDesc}";
+        string line = $"{count},{s.Date.ToString("dd/MM/yyyy")},{state.Project.Value.Info.TestNumber},{state.Project.Value.Info.Easting},{state.Project.Value.Info.Northing},{s.TestId},{s.BoreholeStartDepth},{s.BoreholeEndDepth},{s.SampleRecovery},{s.SampleDrillOut},{s.SampleType},{s.ContainsCarbonate},{s.SampleDesc}";
         csvData += $"{line}\n";
+       // Console.WriteLine(csvData);
     }
     private void WriteToCSVFile()
     {
+        string filePath = $"SOTR_{state.Project.Value.Info.TestNumber}_{DateTime.Now.ToString("ddMMyyyy_hhmmss")}.csv";
         if(csvData != "")
         {
-            fileWriter.WriteToCSVFile(csvData);
+            fileWriter.WriteToCSVFile(filePath,csvData);
         }
+        Console.WriteLine(filePath);
     }
     private void ShowBoreholeLogs()
     {
         if(state.FilteredAndComputedCPTDataInColumnsDict.Value.Count == 0)
         {
             string okVal = "ShowLogs";
-            MsgBoxHelper("No processed CPT data for borehole Logs!!! click Ok to proceed and continue to process CPT.","warn","/",okVal,true);
+            MsgBoxHelper("No processed CPT data for composite borehole Logs!!! click continue to process CPT. \n click Ok to view borehole logs","warn","/",okVal,true);
         }
         else
         {

@@ -4,6 +4,7 @@ using OxyPlot.Axes;
 using OxyPlot.Annotations;
 using OxyPlot.Series;
 using OxyPlot.Legends;
+using Microsoft.AspNetCore.HttpLogging;
 
 public class PlotModelService
 {
@@ -99,17 +100,102 @@ public class PlotModelService
             plotModel.Annotations.Add(CreateRectangle(x0, x1, maxBoreholeDepth, maxDepth, legend.color, legend.hatchStyle));
         }
     }
+    public PlotModel PlotUnitWeight(List<SampleInfo> sample)
+    {
+        var plotModel = new PlotModel ();
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Unit Weight (kN/m3)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        var legend = new Legend
+        {
+            LegendTitle = "Legend",
+            LegendOrientation = LegendOrientation.Horizontal,
+            LegendPosition = LegendPosition.TopCenter,
+            LegendPlacement = LegendPlacement.Outside,
+            /*LegendBackground = OxyColors.White,*/
+            LegendBorder = OxyColors.Black,
+            LegendFontSize = 14,
+            LegendFontWeight = FontWeights.Bold,
+            LegendSymbolLength = 30,
+            LegendMargin = 10 
+        };
+        plotModel.Legends.Add(legend);
+        var wetSeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Star,
+            MarkerSize = 2,
+            MarkerStroke = OxyColors.Blue,
+            MarkerFill = OxyColors.Blue,
+            Title = "wet uw"
+        };
+        var drySeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Circle,
+            MarkerSize = 2,
+            MarkerStroke = OxyColors.Green,
+            MarkerFill = OxyColors.Green,
+            Title = "dry uw"
+        };
+        var subSeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Diamond,
+            MarkerSize = 2,
+            MarkerStroke = OxyColors.Red,
+            MarkerFill = OxyColors.Red,
+            Title = "sub uw"
+        };
+        foreach (var sotr in sample)
+        {
+            foreach (var uw in sotr.Calculus.UnitWeightParamList)
+            {
+                wetSeries.Points.Add(new ScatterPoint(uw.bulkUnitWeightInKNm3,uw.depth));
+                drySeries.Points.Add(new ScatterPoint(uw.dryUnitWeightInKNm3,uw.depth));
+                subSeries.Points.Add(new ScatterPoint(uw.submergedDensityInKNm3,uw.depth));
+            }
+        }
+        plotModel.Series.Add(wetSeries);
+        plotModel.Series.Add(drySeries);
+        plotModel.Series.Add(subSeries);
+        return plotModel;  
+    }
+    public PlotModel PlotWaterContent(List<SampleInfo> sample)
+    {
+        var plotModel = new PlotModel ();
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content (%)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        var wcSeries = new ScatterSeries
+        {
+            MarkerType = MarkerType.Square,
+            MarkerSize = 2,
+            MarkerStroke = OxyColors.DarkBlue,
+            MarkerFill = OxyColors.DarkBlue,
+            Title = "wc (%)"
+        };
+        foreach (var sotr in sample)
+        {
+            foreach (var wc in sotr.Calculus.MoistureContentParamList)
+            {
+                wcSeries.Points.Add(new ScatterPoint(wc.result,wc.depth));
+            }
+        }
+        plotModel.Series.Add(wcSeries);
+        return plotModel;  
+    }
     public PlotModel PlotConeResistance(List<double> depth,List<double> qc, List<double> qt, List<double> qnet)
     {
         var plotModel = new PlotModel ();
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        double xmax = new List<List<double>> {qc,qt,qnet}
+                     .SelectMany(x => x)
+                     .Max();
+        double xMax = Math.Round(xmax,1);
+        double yMax = depth.Max();
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         var legend = new Legend
         {
             LegendTitle = "Legend",
             LegendOrientation = LegendOrientation.Horizontal,
-            LegendPosition = LegendPosition.TopRight,
+            LegendPosition = LegendPosition.RightTop,
             LegendPlacement = LegendPlacement.Inside,
             /*LegendBackground = OxyColors.White,*/
             LegendBorder = OxyColors.Black,
@@ -138,6 +224,8 @@ public class PlotModelService
         {
             MarkerType = MarkerType.Square,
             MarkerSize = 1,
+            Color = OxyColors.Blue,
+            MarkerStroke = OxyColors.Blue,
             MarkerFill = OxyColors.Blue,
             Title = "qt"
         };
@@ -152,6 +240,29 @@ public class PlotModelService
         plotModel.Series.Add(qnetSeries);
         return plotModel;  
     }
+    public PlotModel PlotPorePressure(List<double> depth,List<double> u2)
+    {
+        var plotModel = new PlotModel() { };
+        double xMin = Math.Round(u2.Min(),1); double xMax =Math.Round(u2.Max(),1);
+        plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+
+        var u2Series = new LineSeries
+        {
+            MarkerType = MarkerType.Circle,
+            MarkerSize = 1,
+            Color = OxyColors.Blue,
+            Title = "u2"
+        };
+        for (int i = 0; i < depth.Count; i++)
+        {
+            u2Series.Points.Add(new DataPoint(u2[i],depth[i]));
+        }
+        plotModel.Series.Add(u2Series);
+        return plotModel;  
+    }
+
+
     //Testing
     public PlotModel CreatePlotModel()
     {
@@ -250,4 +361,12 @@ public class PlotModelService
             HatchColor = OxyColors.Black
         };
     }
+    /*
+                double xMax = new List<List<double>> { u2,bq}
+                     .SelectMany(x => x)
+                     .Max();
+        double xMin = new List<List<double>> { u2,bq}
+                     .SelectMany(x => x)
+                     .Min();
+    */
 }

@@ -13,7 +13,6 @@ public class State
   public StateParameters<bool> IsNewDataClicked{ get; set;} = new StateParameters<bool>(false);
   public StateParameters<double> WaterNature{ get; set;} = new StateParameters<double>(0);
   public StateParameters<bool> IsDataLoaded{ get; set;} = new StateParameters<bool>(false);
-  //public StateParameters<SampleInfo> SOTR { get; set;} = new StateParameters<SampleInfo>(new());
   public StateParameters<List<string[]>> HeaderArray{ get; set;} = new StateParameters<List<string[]>>(new());
   public StateParameters<Dictionary<int, string>> HeaderIndexDict{ get; set;} = new StateParameters<Dictionary<int, string>>(new());
   public StateParameters<Dictionary<int, string>> HeaderUnitDict{ get; set;} = new StateParameters<Dictionary<int, string>>(new());

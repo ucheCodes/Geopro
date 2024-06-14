@@ -213,14 +213,17 @@
   background-color: gray !important;
   width: 370px !important;
   padding: 12px !important;
+  border-radius: 8px;
   height: fit-content;
 }
 .sample-box h3{
   font-size: 15px;
 }
-.sample-box .x{
-  font-size: 1.4rem;
-  color: yellow;
+.sample-box .k{
+  position: relative;
+}
+.sample-box .k .x{
+  top: -8px !important;
 }
 .dialog-body {
   display: flex;
@@ -235,7 +238,7 @@
   flex-direction: column;
   background-color: lightgray;
   width: 500px;
-  padding: 20px;
+  padding: 10px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(8, 7, 7, 0.1);
   position: relative;
@@ -276,7 +279,7 @@
 .input-group input[type="text"],select,.input-group p,.input-group span,
  .input-group input[type="number"],#textarea, .input-group input[type="file"] {
   width: 100%;
-  padding: 10px;
+  padding: 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
@@ -330,4 +333,34 @@ img{
 }
 .lab{
   background-color: lightgray;
+}
+/*circle btns for lab*/
+.circle-btns {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 20px;
+}
+
+.circle-btns .items {
+  width: 40px; 
+  height: 40px; 
+  border-radius: 50%;
+  background-color: #007bff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.circle-btns .items span:hover{
+  font-size: 32px;
+  cursor: pointer; 
+}
+
+.circle-btns .items span {
+  color: #fff;
+  font-size: 35px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
 }

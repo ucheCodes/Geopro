@@ -200,7 +200,8 @@
                     double value = 0; double depth = 0;
                     if(double.TryParse(xDepth, out depth) && double.TryParse(item, out value))
                     {
-                        var x = value; var y = depth;
+                        var x = value;
+                        var y = depth;
                         if(index != 0 && state.HeaderIndexDict.Value.ContainsKey(index))
                         {
                             if(index == 1)//tip resistance
@@ -272,18 +273,35 @@
             InitializePlotModels();
             filteredRawDataInRowsArray = filteredRow;
             dataCount = filteredRawDataInRowsArray.Count;
+            List<double> rfList = new List<double>();
             List<double> depth = filteredCol[0];
             List<double> coneR = filteredCol[1];
             List<double> sf = filteredCol[2];
             List<double> pp = filteredCol[3]; 
 
+            double coneXMin = Math.Round(coneR.Min(),1); double coneXMax = Math.Round(coneR.Max(),1);
+            coneXAxis.Minimum = coneXMin; coneXAxis.Maximum = coneXMax;
+
+            //double sfXMin = Math.Round(sf.Min(),1); double sfXMax = Math.Round(sf.Max(),1);
+            //sleeveXAxis.Minimum = sfXMin;
+            //sleeveXAxis.Maximum = sfXMax;
+
+            poreXAxis.Minimum = Math.Round(pp.Min(),1); poreXAxis.Maximum = Math.Round(pp.Max(),1);
+
+
             for(int i = 0; i < coneR.Count; i++)
             {
-                double rf = sf[i] / coneR[i];
+                double rf = (sf[i] / coneR[i]);
+                rfList.Add(rf);
                 coneSeries.Points.Add(new DataPoint(coneR[i],depth[i]));
                 sleeveSeries.Points.Add(new DataPoint(sf[i],depth[i]));
                 poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
-                rfSeries.Points.Add(new DataPoint(rf,depth[i]));
+            }
+
+            rfXAxis.Minimum = Math.Round(rfList.Min(),1); rfXAxis.Maximum = Math.Round(rfList.Max(),1);  
+            for(int i = 0; i < depth.Count; i++)
+            {
+                rfSeries.Points.Add(new DataPoint(rfList[i],depth[i]));
             }
         }
     }
@@ -299,7 +317,6 @@
                     Console.Write($"{columnOfData[i]} ");
                 }
             }
-            Console.WriteLine(" ");
         }
     }
     public void ViewProcessedData()
@@ -311,19 +328,27 @@
             InitializePlotModels();
             dataCount = computedCol[0].Count;
             List<double> depth = computedCol[0];
+            List<double> fs = computedCol[2];
+            List<double> pp = computedCol[3];//pore pressure filtered
             List<double> qt = computedCol[10];
-            List<double> qnet = computedCol[11];//Qt is 12
+            List<double> qnet = computedCol[11];
             List<double> Qt = computedCol[12];
             List<double> rf = computedCol[13]; 
             List<double> bq = computedCol[14]; 
 
             depth = depth.Where(d => d > 0).ToList<double>();
+
+            coneXAxis.Minimum = Math.Round(qt.Min(),1); coneXAxis.Maximum = Math.Round(qt.Max(),1);
+            //sleeveXAxis.Minimum = Math.Round(fs.Min(),1); sleeveXAxis.Maximum = Math.Round(fs.Max(),1);
+            rfXAxis.Minimum = Math.Round(rf.Min(),1); rfXAxis.Maximum = Math.Round(rf.Max(),1);
+            poreXAxis.Minimum = Math.Round(pp.Min(),1); poreXAxis.Maximum = Math.Round(pp.Max(),1);
+
             for(int i = 0; i < depth.Count; i++)
             {
                 coneSeries.Points.Add(new DataPoint(qt[i],depth[i]));
-                sleeveSeries.Points.Add(new DataPoint(Qt[i],depth[i]));
+                sleeveSeries.Points.Add(new DataPoint(fs[i],depth[i]));
                 rfSeries.Points.Add(new DataPoint(rf[i],depth[i]));
-                poreSeries.Points.Add(new DataPoint(bq[i],depth[i]));
+                poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
             }
         }
     }
@@ -332,37 +357,37 @@
     {
         if(data2show == "processed")
         {
-            var cm = ChartInitializer.Init("qt (MPa)",false,false,0,1,1,0,"qt (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
-            coneModel = cm.Item1; coneSeries = cm.Item2;
-            var sm = ChartInitializer.Init("Qt (MPa)",false,false,0,1,1,0,"Qt (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
-            sleeveModel = sm.Item1; sleeveSeries = sm.Item2;
-            var pm = ChartInitializer.Init("Bq",false,false,0,1,1,0,"Bq","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
-            poreModel = pm.Item1; poreSeries = pm.Item2;
-            var rfm = ChartInitializer.Init("Rf (%)",false,false,0,1,1,0,"Rf (%)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkBlue);
-            rfModel = rfm.Item1; rfSeries = rfm.Item2;
+            var cm = ChartInitializer.InitLinear("qt (MPa)",0,1,1,0,"qt (MPa)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
+            coneModel = cm.Item1; coneSeries = cm.Item2;coneXAxis = cm.Item3; coneYAxis = cm.Item4;
+            var sm = ChartInitializer.InitLinear("fs (MPa)",0,1,1,0,"fs (MPa)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
+            sleeveModel = sm.Item1; sleeveSeries = sm.Item2; sleeveXAxis = sm.Item3; sleeveYAxis = sm.Item4;
+            var pm = ChartInitializer.InitLinear("U2 (MPa)",0,1,1,0,"u2 MPa","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
+            poreModel = pm.Item1; poreSeries = pm.Item2; poreXAxis = pm.Item3; poreYAxis = pm.Item4;
+            var rfm = ChartInitializer.InitLinear("Rf (%)",0,1,1,0,"Rf (%)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkBlue);
+            rfModel = rfm.Item1; rfSeries = rfm.Item2; rfXAxis = rfm.Item3; rfYAxis = rfm.Item4;
         }
         else
         {
-            var cm = ChartInitializer.Init("Tip Resistance",false,false,0,1,1,0,"qc (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
-            coneModel = cm.Item1; coneSeries = cm.Item2;
-            var sm = ChartInitializer.Init("Sleeve Friction",false,false,0,1,1,0,"Fs (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
-            sleeveModel = sm.Item1; sleeveSeries = sm.Item2;
-            var pm = ChartInitializer.Init("Pore Pressure",false,false,0,1,1,0,"u2 (MPa)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
-            poreModel = pm.Item1; poreSeries = pm.Item2;
-            var rfm = ChartInitializer.Init("Friction Ratio (%)",false,false,0,1,1,0,"Rf (%)","Penetration (m)",2, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkBlue);
-            rfModel = rfm.Item1; rfSeries = rfm.Item2;
+            var cm = ChartInitializer.InitLinear("Tip Resistance",0,1,1,0,"qc (MPa)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
+            coneModel = cm.Item1; coneSeries = cm.Item2; coneXAxis = cm.Item3; coneYAxis = cm.Item4;
+            var sm = ChartInitializer.InitLinear("Sleeve Friction",0,1,1,0,"Fs (MPa)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
+            sleeveModel = sm.Item1; sleeveSeries = sm.Item2; sleeveXAxis = sm.Item3; sleeveYAxis = sm.Item4;
+            var pm = ChartInitializer.InitLinear("Pore Pressure",0,1,1,0,"u2 (MPa)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
+            poreModel = pm.Item1; poreSeries = pm.Item2; poreXAxis = pm.Item3; poreYAxis = pm.Item4;
+            var rfm = ChartInitializer.InitLinear("Friction Ratio (%)",0,1,1,0,"Rf (%)","Penetration (m)",1, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkBlue);
+            rfModel = rfm.Item1; rfSeries = rfm.Item2; rfModel = rfm.Item1; rfSeries = rfm.Item2; rfXAxis = rfm.Item3; rfYAxis = rfm.Item4;
         }
     }
     
     private void InitializeDecayPlotModels()
     {
-        var pldm = ChartInitializer.Init("Pore Pressure Decay",true,false,0,1,0,1,"Log Time (mins)","Pore Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkRed);
+        var pldm = ChartInitializer.InitLog("Pore Pressure Decay",0,1,0,1,"Log Time (mins)","Pore Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkRed);
         poreLogDecayModel = pldm.Item1; poreLogSeries = pldm.Item2;
-        var prdm = ChartInitializer.Init("Pore Pressure Decay",false,false,0,1,0,1,"Root Time (mins ^ 0.5)","Pore Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkBlue);
+        var prdm = ChartInitializer.InitLog("Pore Pressure Decay",0,1,0,1,"Root Time (mins ^ 0.5)","Pore Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkBlue);
         poreRootDecayModel = prdm.Item1;poreRootSeries = prdm.Item2;
-        var cldm = ChartInitializer.Init("Tip Resistance Decay",true,false,0,1,0,1,"Log Time (mins)","Tip Resistance(MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkGoldenrod);
+        var cldm = ChartInitializer.InitLog("Tip Resistance Decay",0,1,0,1,"Log Time (mins)","Tip Resistance(MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkGoldenrod);
         coneLogDecayModel = cldm.Item1; coneLogSeries = cldm.Item2;
-        var crdm = ChartInitializer.Init("Tip Resistance Decay",false,false,0,1,0,1,"Root Time (mins ^ 0.5)","Tip Resistance Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkGreen);
+        var crdm = ChartInitializer.InitLog("Tip Resistance Decay",0,1,0,1,"Root Time (mins ^ 0.5)","Tip Resistance Pressure (MPa)",1.5, AxisPosition.Bottom,AxisPosition.Left,OxyColors.DarkGreen);
         coneRootDecayModel = crdm.Item1; coneRootSeries = crdm.Item2;
     }
     public void InitializePlotModelsObsolete()
@@ -520,8 +545,5 @@
         }
 
     }
-
-
-
 
 }

@@ -29,3 +29,9 @@ function screenShot(chartId){
         }
     )
 }
+//change select
+function setSelectValue(element, value) {
+    element.value = value;
+    var event = new Event('change');
+    element.dispatchEvent(event);
+}

@@ -13,24 +13,113 @@
     protected override void OnInitialized()
     {
         ///plotModel = new PlotModel { Title = "Rectangle with Text" };
-
-       plotModel = CreateRectangleWithWrappedText(1, 6, 1, 4);
+        string text = $"Hello\n02";
+        CreateRectangleWithTextRotationalAngle(plotModel,1,1.4,1,1.3,"DR",OxyColors.Red);
+        DrawRectangleArrowHeadAndText(plotModel,2, 2.5, 0, 4, OxyColors.LightGray, OxyColors.Black,OxyColors.Red, "string text");
+        CreateRectangleWithTextOld(plotModel,text,2.5,3,0,4);
+        DrawRectangleArrowHead(plotModel, 3.5,4,1,4, OxyColors.LightGray, OxyColors.Black,ArrowDirection.up);
     }
-
-    private void CreateRectangleWithTextOld()
+    private void CreateRectangleAndParrallelText(PlotModel plotModel)
     {
+        
+    }
+    private void CreateRectangleWithTextRotationalAngle(PlotModel plotModel, double x0, double x1, double y0, double y1, string text, OxyColor fillColor)
+    {
+        //valid and working
+        double fontsize = 12;
+        double rectLength = y1 - y0;
+
         // Define axes
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Minimum = 0, Maximum = 10 });
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Minimum = 0, Maximum = 10 });
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 10 });
+        plotModel.Axes.Add(new LinearAxis { StartPosition = 0, EndPosition = 1, Position = AxisPosition.Left, Minimum = 0, Maximum = 10 });
 
         // Add a rectangle annotation
         var rectangleAnnotation = new RectangleAnnotation
         {
-            MinimumX = 2,
-            MaximumX = 8,
-            MinimumY = 3,
-            MaximumY = 7,
-            Fill = OxyColors.LightGray,
+            MinimumX = x0,
+            MaximumX = x1,
+            MinimumY = y0,
+            MaximumY = y1,
+            Fill = fillColor,
+            Stroke = OxyColors.Black,
+            StrokeThickness = 1
+        };
+        plotModel.Annotations.Add(rectangleAnnotation);
+
+        // Custom annotation to draw vertical text
+        if(rectLength < 1 && text.Length >= 4)
+        {
+            fontsize = 10;
+        }
+        else if(rectLength >= 1 && text.Length >= 7)
+        {
+            fontsize = 12;
+        }
+        var customTextAnnotation = new CustomTextAnnotation
+        {
+            Text = text,//"This is a text inside the rectangle",
+            Rectangle = rectangleAnnotation,
+            FontSize = fontsize,
+            TextColor = OxyColors.White,
+            RotationAngle = 270
+        };
+        plotModel.Annotations.Add(customTextAnnotation);
+    }
+    private void DrawRectangleArrowHeadAndText(PlotModel plotModel,double x0, double x1, double y0, double y1, OxyColor fillColor, OxyColor lineColor,OxyColor textColor, string text)
+    {
+        //valid and working
+        var customAnnotation = new CustomRectangleWithArrowAndTextAnnotation
+        {
+            MinimumX = x0,
+            MaximumX = x1,
+            MinimumY = y0,
+            MaximumY = y1,
+            FontSize = 16,
+            Text = text,
+            TextRotationAngle = 90,
+            FillColor = fillColor,
+            LineColor = lineColor,
+            TextColor = textColor,
+            LineThickness = 2,
+            ArrowHeadLength = 15
+        };
+        plotModel.Annotations.Add(customAnnotation);
+    }
+    
+    private void DrawRectangleArrowHead(PlotModel plotModel,double x0, double x1, double y0, double y1, OxyColor fillColor, OxyColor lineColor, ArrowDirection direction)
+    {
+        //valid and working
+        var customAnnotation = new CustomRectangleWithArrowAnnotation
+        {
+            MinimumX = x0,
+            MaximumX = x1,
+            MinimumY = y0,
+            MaximumY = y1,
+            FontSize = 16,
+            FillColor = fillColor,
+            LineColor = lineColor,
+            LineThickness = 2,
+            ArrowHeadLength = 15,
+            ArrowDirection = direction
+        };
+        plotModel.Annotations.Add(customAnnotation);
+    }
+
+
+    private void CreateRectangleWithTextOld(PlotModel plotModel,string text, double x0, double x1, double y0, double y1)
+    {
+        // Define axes
+        //plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Minimum = 0, Maximum = 10 });
+        //plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Minimum = 0, Maximum = 10 });
+
+        // Add a rectangle annotation
+        var rectangleAnnotation = new RectangleAnnotation
+        {
+            MinimumX = x0,
+            MaximumX = x1,
+            MinimumY = y0,
+            MaximumY = y1,
+            Fill = OxyColors.Transparent,
             Stroke = OxyColors.Black,
             StrokeThickness = 1
         };
@@ -39,20 +128,17 @@
         // Add a text annotation
         var textAnnotation = new TextAnnotation
         {
-            Text = "This is a text inside the rectangle",
-            TextPosition = new DataPoint((rectangleAnnotation.MinimumX + rectangleAnnotation.MaximumX) / 2, 
-                                         (rectangleAnnotation.MinimumY + rectangleAnnotation.MaximumY) / 2),
+            Text = text,
+            TextPosition = new DataPoint((x0 + x1) / 2, 
+                                         (y0 + y1) / 2),
             FontSize = 16,
+            //TextColor = OxyColors.White,
             TextHorizontalAlignment = HorizontalAlignment.Center,
             TextVerticalAlignment = VerticalAlignment.Middle,
             Stroke = OxyColors.Transparent
         };
         plotModel.Annotations.Add(textAnnotation);
     }
-    //start
-
-//public class PlotModelExample
-//{
     public PlotModel CreateRectangleWithWrappedText(double minX, double maxX, double minY, double maxY)
     {
         var plotModel = new PlotModel { Title = "Rectangles with Hatches and Wrapped Text" };
@@ -95,7 +181,7 @@
             };
 
             plotModel.Annotations.Add(textAnnotation);
-            //currentY -= lineHeight; // Move to the next line
+            currentY -= lineHeight; // Move to the next line
         }
     }
 

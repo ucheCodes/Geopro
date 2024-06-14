@@ -15,6 +15,7 @@
                     <thead>
                         <tr>
                             <th>S/N</th>
+                            <th>Date</th>
                             <th>Project Title</th>
                             <th>Project Location</th>
                             <th>Processor Name</th>
@@ -37,6 +38,7 @@
                             count++;
                             <tr>
                                 <td>@count</td>
+                                <td>@project.Date.ToString("dd/MM/yyyy")</td>
                                 <td>@project.Info.Title</td>
                                 <td>@project.Info.Location</td>
                                 <td>@project.Info.Name</td>
@@ -50,7 +52,7 @@
                                 <td>@project.DataArray.Count</td>
                                 <td><i @onclick="@((e) => ModifyProject("view",project))" class="fas fa-edit icons"/></td>
                                 <td><i @onclick="@((e) => ModifyProject("edit",project))"  class="fas fa-user icons"/></td>
-                                <td><i @onclick="@((e) => ModifyProject("delete",project))"  class="fas fa-trash icons"/></td>
+                                <td><i @onclick="(() => _Delete(project.Id))"  class="fas fa-trash icons"/></td>
                             </tr>
                         }
                     </tbody>
@@ -62,11 +64,21 @@
 else{
     <h3>No Projects Saved</h3>
 }
+<div class="msg-dialog @((showMessageBox) ? "active" : "")">
+    <MessageBox msgType="@msgBoxType"
+        msg="@msgBoxInfo" okString="@msgBoxOkString" route="@msgBoxRoute" ShowMessageBox="CloseMessageBox"  />
+</div>
+
 @code {
     List<Project> projects = new();
     int count = 0;
     [Parameter]
     public EventCallback<Tuple<string,Project>> ProjectEventCallBack {get;set;}
+    bool showMessageBox = false;
+    string msgBoxInfo = "";
+    string msgBoxType = "";
+    string msgBoxRoute = "";
+    string msgBoxOkString = "";
     protected override void OnInitialized()
     {
         GetAllProjects();
@@ -86,21 +98,64 @@ else{
                 Project value = JsonConvert.DeserializeObject<Project>(p.Value) ?? new();
                 projects.Add(value);
             }
+            projects = projects.OrderByDescending(d => d.Date).ToList();
         }
     }
     private void ModifyProject(string operation, Project project)
     {
-        //I used this approach just to learn tuple and event call back
-        if(operation == "delete")
-        {
-            bool isDel = database.Delete("Projects", project.Id);
-            if(isDel)
-            {
-                projects = projects.Where(p => p.Id != project.Id).ToList();
-            }
-            else {operation = "delete failed";}
-        }
         var tupleData = new Tuple<string,Project>(operation,project);
         ProjectEventCallBack.InvokeAsync(tupleData);
+    }
+    private void Delete(string id)
+    {
+        bool isDel = database.Delete("Projects", id);
+        if(isDel)
+        {
+            projects = projects.Where(p => p.Id != id).ToList();
+        }
+    }
+    private void _Delete(string id)
+    {
+        string okVal = $"Delete_{id}";
+        MsgBoxHelper("This data and all progress made will be deleted permanently!","warn","",okVal,true);
+    }
+    private void RunOkFunction(string functionName)
+    {
+        string parameter = "";
+        if(functionName.StartsWith("Delete_"))//can use for other functions that contains parameter
+        {
+            var arr = functionName.Split("_");
+            functionName = "Delete";//or  arr[0]
+            parameter = arr[1];
+        }
+        switch(functionName)
+        {
+            case "Delete":
+                Delete(parameter);
+            break;
+            default:
+            break;
+        }
+    }
+    private void CloseMessageBox(string value)
+    {
+        if(value == "cancel")
+        {
+            showMessageBox = false;
+        }
+        else if(value == "continue"){/*changes route*/}
+        else if(value != "")
+        {
+            RunOkFunction(value);
+            showMessageBox = false;
+        }
+    }
+    private void MsgBoxHelper(string info, string type, string route, string ok, bool show)
+    {
+        msgBoxInfo = info;
+        msgBoxType = type;
+        msgBoxRoute = route;
+        msgBoxOkString = ok;
+        showMessageBox = show;
     }
 }

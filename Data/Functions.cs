@@ -12,6 +12,16 @@ class Functions : IFunctions
         database = db;
         state = _state;
     }
+    public Dictionary<string,string> GetSamplingTool()
+    {
+        Dictionary<string,string> samplingTool = new Dictionary<string,string>()
+        {
+            {"Wison Push Sampler", "WIP"},
+            {"Push Sampler", "PS"},
+            {"Sampler Hammer", "SH"}
+        };
+        return samplingTool;
+    }
     public bool SaveProject(Project project)
     {
         if (project != null && project.Id != "")
@@ -37,5 +47,6 @@ class Functions : IFunctions
 interface IFunctions
 {
     bool SaveProject(Project project);
-    Tuple<double,double> ComputeOverburdenPressure(double bulkDensityInKNperM3, double depth) ;
+    Tuple<double,double> ComputeOverburdenPressure(double bulkDensityInKNperM3, double depth);
+    Dictionary<string,string> GetSamplingTool();
 }

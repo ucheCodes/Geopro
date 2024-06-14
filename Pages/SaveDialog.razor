@@ -28,16 +28,19 @@
             <input @bind="location" type="text" placeholder="Project Location"  name="input3">
         </div>
         <div class="input-group">
-            <input @bind="siteName" type="text" placeholder="Site Name"  name="input3">
+            <input @bind="siteName" type="text" placeholder=" Site name"  name="input3">
         </div>
         <div class="input-group">
-            <input @bind="testNumber" type="text" placeholder="Test number"  name="input3">
+            <input @bind="testNumber" type="text" placeholder="Test number / Borehole Id or Info"  name="input3">
         </div>
         <div class="input-group">
             <input @bind="coneId" type="text" placeholder="Cone's Serial number"  name="input3">
         </div>
         <div class="input-group">
-            <input @bind="depthDrill" type="number" placeholder="Depth Drilled in meter"  name="input3">
+            <input @bind="waterDepth" type="text" placeholder="Depth of water column above mudline (m)"  name="input3">
+        </div>
+        <div class="input-group">
+            <input @bind="depthDrill" type="text" placeholder="Depth Drilled in meter"  name="input3">
         </div>
         <div class="input-group">
             <input @bind="easting" type="text" placeholder="Borehole positioned Easting"  name="input3">
@@ -109,10 +112,11 @@
                 TestNumber = testNumber,
                 SiteName = siteName,
                 ConeId = coneId,
-                WaterDepth = state.WaterColumnDepth.Value.ToString(),
-                DepthDrilled = depthDrill
+                WaterDepth = waterDepth,//state.WaterColumnDepth.Value.ToString(),
+                DepthDrilled = depthDrill,
             };
             project.Info = info;
+            project.Date = DateTime.Now;
             bool isCreated = functions.SaveProject(project);
             if(isCreated)
             {

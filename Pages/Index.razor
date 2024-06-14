@@ -22,13 +22,13 @@
         <div>
             <span class="icons-group @((activeMenu == file) ? "active" : "")">
                 <i @onclick="(() => ShowFileDialog(true))" class="fas fa-file-csv"></i>
-                <i @onclick="GotoLab" class="fas fa-tint"/>
                 <i @onclick="(() => {showProjects = true;})" class="fas fa-eye"></i>
                 <i @onclick="_ClearAll"  class="fas fa-trash"></i>
             </span>
             <span class="icons-group @((activeMenu == edit) ? "active" : "")">
                     <i @onclick="(() => ShowFileDialog(false))"  class="fas fa-folder-open"></i>
                     <i @onclick="@(() => {showProcessInput = true;})" class="fas fa-book"/>
+                    <i @onclick="GotoLab" class="fas fa-tint"/>
             </span>
             <span class="icons-group @((activeMenu == process) ? "active" : "")">
                 <i @onclick="ViewRawData"  class="fas fa-table"></i>
@@ -108,7 +108,7 @@
     string[]? lastDataArray;
     List<string[]> dataArray = new List<string[]>();
     List<double[]> filteredRawDataInRowsArray = new List<double[]>();
-    List<double> submergedDensityInCol = new List<double>();
+    List<double> bulkDensityInCol = new List<double>();
     List<string> soilNatureInCols = new();
     List<double> strokeInfo = new();
     Dictionary<int, List<double>> filteredRawDataInColumnsDict = new Dictionary<int, List<double>>();
@@ -118,7 +118,6 @@
             study and work on drifts and zeros
             create boring logs and plot torvane (undrained shear strength (su)), pp and UU
             confirm formula binding relationship of yd, yw and nmc in excel
-            check why stroke info is not updated for the loaded chart used for test
             compare with new data
             excel data reader for .xls
         */
@@ -129,6 +128,7 @@
          //use samples end depth as the up bound for the depths and add the bulk density value obtained
          //i.e for borehole 0 - 3m, every depth below 3m, will take the value of the bulk density for that borehole
          //process all previous data using the new software
+         //for further processing, take note of bq, qnet and Qt because they won't work without samples
         */
     }
     protected override void OnAfterRender(bool firstRender)
@@ -142,7 +142,7 @@
     }
     private void ReloadData()
     {
-        if(state.DataArray.Value.Count > dataArray.Count)
+        if(state.DataArray.Value.Count > dataArray.Count)//when route leaves here, data array becomes empty
         {
             dataArray = state.DataArray.Value;
             strokeInfo = state.StrokeInfo.Value;
@@ -216,37 +216,26 @@
         msgBoxOkString = ok;
         showMessageBox = show;
     }
-    private void Test2()
-    {
-        //var filteredRawDataInRowsArray = FilterRawData(dataArray);
-        Console.WriteLine(filteredRawDataInColumnsDict.Count());
-        foreach(var data in filteredRawDataInColumnsDict.Values)
-        {
-            foreach(var item in data)
-            {
-                Console.Write($" {item} ");
-            }
-            Console.WriteLine("");
-        } 
-    }
     private void WriteDataToFile()
     {
-            if(state.Data2Show.Value == "raw" && state.HeaderArray.Value.Count > 0 && state.DataArray.Value.Count > 0)
+        string filePath = "";
+            if(state.Data2Show.Value == "raw" && state.Project.Value.Id != "" && state.HeaderArray.Value.Count > 0 && state.DataArray.Value.Count > 0)
             {
                 var header = fileWriter.BuildRowsToCSVString(state.HeaderArray.Value);
                 var body = fileWriter.BuildRowsToCSVString(state.DataArray.Value);
                 string data = $"{header}{body}";
-                fileWriter.WriteToCSVFile(data);
-
+                filePath = $"CPT_Raw_{state.Project.Value.Info.TestNumber}_{DateTime.Now.ToString("ddMMyyyy_hhmmss")}.csv";
+                fileWriter.WriteToCSVFile(filePath,data);
             }
-            else if(state.Data2Show.Value == "filtered" && state.HeaderArray.Value.Count > 0 && filteredRawDataInRowsArray.Count > 0)
+            else if(state.Data2Show.Value == "filtered" && state.Project.Value.Id != "" && state.HeaderArray.Value.Count > 0 && filteredRawDataInRowsArray.Count > 0)
             {
                 var header = fileWriter.BuildRowsToCSVString(state.HeaderArray.Value);
                 var body = fileWriter.BuildRowsToCSVString(filteredRawDataInRowsArray);
                 string data = $"{header}{body}";
-                fileWriter.WriteToCSVFile(data);
+                filePath = $"CPT_Filtered_{state.Project.Value.Info.TestNumber}_{DateTime.Now.ToString("ddMMyyyy_hhmmss")}.csv";
+                fileWriter.WriteToCSVFile(filePath,data);
             }
-            else if(state.Data2Show.Value == "processed" && state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0 && state.HeaderIndexDict.Value.Count() > 0)
+            else if(state.Data2Show.Value == "processed" && state.Project.Value.Id != "" && state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0 && state.HeaderIndexDict.Value.Count() > 0)
             {
                 string header = ""; string unit = "";string comma = string.Empty;int i = 0;
                 var body = fileWriter.BuildColumnsToCSVString(state.FilteredAndComputedCPTDataInColumnsDict.Value);
@@ -268,7 +257,8 @@
                     i++;
                 }
                 string data = $"{header}\n{unit}\n{body}";
-                fileWriter.WriteToCSVFile(data);
+                filePath = $"CPT_Processed_{state.Project.Value.Info.TestNumber}_{DateTime.Now.ToString("ddMMyyyy_hhmmss")}.csv";
+                fileWriter.WriteToCSVFile(filePath,data);
             }
             else
             {
@@ -378,8 +368,8 @@
                     //rf = fs / qt  typically 
                     //Bq = (u2 - u0) / qnet; //assume u0 = 0 
                     if(row[0] > 0)
-                    {
-                        Tuple<double, double> overburden = functions.ComputeOverburdenPressure(submergedDensityInCol[i],row[0]);
+                    {//for further processing, take note of bq, qnet and Qt because they won't work without samples
+                        Tuple<double, double> overburden = functions.ComputeOverburdenPressure(bulkDensityInCol[i],row[0]);
                         double effectiveOverburden = overburden.Item1;
                         double totalOverburden = overburden.Item2;
                         double qt = row[1] + (row[3] * (1 - a));
@@ -388,11 +378,11 @@
                         double rf = row[2] / qt;
                         double bq = (row[3] - u0) / qnet;//find out u0
                         PopulateRawDataIntoColumns(dataIndex, qt);
-                        PopulateRawDataIntoColumns(dataIndex + 1, qnet);
-                        PopulateRawDataIntoColumns(dataIndex + 2, Qt);
+                        PopulateRawDataIntoColumns(dataIndex + 1, qnet);//not needed here
+                        PopulateRawDataIntoColumns(dataIndex + 2, Qt);//not needed here
                         PopulateRawDataIntoColumns(dataIndex + 3, rf);
-                        PopulateRawDataIntoColumns(dataIndex + 4, bq);
-                        PopulateRawDataIntoColumns(dataIndex + 5, effectiveOverburden);
+                        PopulateRawDataIntoColumns(dataIndex + 4, bq);//not needed here
+                        PopulateRawDataIntoColumns(dataIndex + 5, effectiveOverburden); 
                         PopulateRawDataIntoColumns(dataIndex + 6, totalOverburden);
                         i++;
                     }
@@ -444,16 +434,6 @@
             store.Mutate<Project>("SaveProjectParameter", project);
             navigationManager.NavigateTo("/save");
         }
-        else if(operation == "delete")
-        {
-            var msg = "Project deleted successfully";
-            MsgBoxHelper(msg,"valid","","null",true);
-        }
-        else if(operation == "delete failed")
-        {
-            var msg = "project failed to delete!!!";
-            MsgBoxHelper(msg,"warn","","null",true);
-        }
         else if(operation == "view")
         {
             LoadSavedProject(project);
@@ -469,18 +449,19 @@
             FilteredRawDataInRowsArray = filteredRawDataInRowsArray,
             TableTitle = tableTitle, 
             HeaderArray = state.HeaderArray.Value,
-            SubmergedDensityInCol = submergedDensityInCol,
+            BulkDensityInCol = bulkDensityInCol,
             SoilNatureInCols = soilNatureInCols,
             StrokeInfo = strokeInfo,
             FilteredRawDataInColumnsDict = filteredRawDataInColumnsDict,
             HeaderIndexDict = state.HeaderIndexDict.Value,
             HeaderUnitDict = state.HeaderUnitDict.Value,
             IsFiltered = isFiltered
-        };//Include var for processed and computed data
+        };
         if(lastDataArray != null)
         {
             _project.LastDataArray = lastDataArray;
-        }          
+        }
+        Console.WriteLine($"stroke info from populate project {_project.StrokeInfo.Count}");        
         return _project;
     }
     private void Save()
@@ -488,6 +469,7 @@
         if(state.IsDataLoaded.Value && dataArray.Count > 0)
         {
             var project = PopulateProject();
+            project.Date = DateTime.Now;
             if(state.Project.Value.Id == "" )
             {
                 string id = Guid.NewGuid().ToString();
@@ -511,7 +493,7 @@
         }
         else if(state.Project.Value.Id != "")
         {
-            var msg = "Project saved success!!!";
+            var msg = "Project saved success!!!";//just in case user wants to saves sample progress
             MsgBoxHelper(msg,"valid","","null",true);  
         }
         else
@@ -534,12 +516,13 @@
             store.Mutate<List<string[]>>("HeaderArray",p.HeaderArray);
             store.Mutate<Dictionary<int, string>>("HeaderUnitDict",p.HeaderUnitDict);
             store.Mutate<Dictionary<int, string>>("HeaderIndexDict",p.HeaderIndexDict);
-            submergedDensityInCol = p.SubmergedDensityInCol;
+            bulkDensityInCol = p.BulkDensityInCol;
             soilNatureInCols = p.SoilNatureInCols;
             strokeInfo = p.StrokeInfo;
             filteredRawDataInColumnsDict = p.FilteredRawDataInColumnsDict;
-            isFiltered = p.IsFiltered;//include isProcessed
+            isFiltered = p.IsFiltered;
             store.Mutate<Project>("Project",p);
+            Console.WriteLine($"stroke info from index load saved project {p.StrokeInfo.Count}");
             ViewRawData();
         }
         else if(p.Id != "")
@@ -594,10 +577,10 @@
             Console.WriteLine(e.Message);
         }
     }
-    private List<double[]> FilterRawData(List<string[]> rawDataArray)
+    private List<double[]> FilterRawData00(List<string[]> rawDataArray)
     {
         filteredRawDataInColumnsDict = new();//Just because I am modifying, create a new instance
-        submergedDensityInCol = new(); //when getting this from lab, be careful of the units
+        bulkDensityInCol = new(); //when getting this from lab, be careful of the units
         List<double[]> filteredDataArray = new List<double[]>();//from kg / m3 convert to MPa by multiplying (density, g = 9.8 m/s, d) / 1000
         int i = 0;
         double penetrationStartDepth = 0;
@@ -617,14 +600,14 @@
                         {
                             if(i == 0)//i keeps record of the number of rows of + cone res.
                             {
-                                penetrationStartDepth = currentDepth;
+                                penetrationStartDepth = currentDepth;//Think about this
                             } 
                             var newCalculatedDepth = value - penetrationStartDepth;
                             value = Math.Round(newCalculatedDepth, 2);
                         }
                         filteredRow[j] = value;//When writing codes for the zero's,
                         PopulateRawDataIntoColumns(j, value);//study the codes above and understand it proper
-                        PopulateSubmergedDensityIntoColumns(j,value);//Finally, modify that value for the new zeros modified codes
+                        PopulateBulkDensityIntoColumns(j,value);//Finally, modify that value for the new zeros modified codes
                         j++;
                     }
                 }
@@ -635,16 +618,62 @@
         }
         return filteredDataArray;
     }
-    private void PopulateSubmergedDensityIntoColumns(int resistanceIndex, double resistanceValue)
+
+    private List<double[]> FilterRawData(List<string[]> rawDataArray)
+    {//modified filter data
+        filteredRawDataInColumnsDict = new();
+        bulkDensityInCol = new(); 
+        List<double[]> filteredDataArray = new List<double[]>();
+        int i = 0;
+        double penetrationStartDepth = 0;
+        double initialStartDepth = 0;
+        double depthDifference = 0;
+        double.TryParse(rawDataArray[0][0], out initialStartDepth);//get the very first data value
+        foreach(var dataArr in rawDataArray)
+        {
+            double index0;//reps depth column
+             double index1;//reps resistance column
+             int j = 0;
+            double[] filteredRow = new double[dataArr.Length];
+            if(double.TryParse(dataArr[0], out index0) && double.TryParse(dataArr[1], out index1) && index0 >= 0 && index1 > 0)
+            {
+                foreach(var data in dataArr)
+                {
+                    double value;
+                    if(double.TryParse(data, out value))
+                    {
+                        if(i >= 0 && j == 0)//j reps the column of data contain depth
+                        {
+                            if(i == 0)//i keeps record of the number of rows of where cone res. is positive
+                            {
+                                penetrationStartDepth = value;
+                                depthDifference = penetrationStartDepth - initialStartDepth;
+                            } 
+                            var newCalculatedDepth = value - depthDifference;
+                            value = Math.Round(newCalculatedDepth, 2);
+                        }
+                        filteredRow[j] = value;
+                        PopulateRawDataIntoColumns(j, value);
+                        PopulateBulkDensityIntoColumns(j,value);
+                        j++;
+                    }
+                }
+                i++;
+                filteredDataArray.Add(filteredRow);
+            }
+        }
+        return filteredDataArray;
+    }
+    private void PopulateBulkDensityIntoColumns(int resistanceIndex, double resistanceValue)
     {
         if(resistanceIndex == 1 && resistanceValue > 1.0)//Mpa > 1.0 is typical of sand
         {
-            submergedDensityInCol.Add(19.5);
+            bulkDensityInCol.Add(19.5);
             soilNatureInCols.Add("granular");
         }
         else if(resistanceIndex == 1 && resistanceValue <= 1.0)
         {
-            submergedDensityInCol.Add(16.5);
+            bulkDensityInCol.Add(16.5);
             soilNatureInCols.Add("cohesive");
         }
     }
@@ -665,9 +694,26 @@
     }
     private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
+        if(e.File.Name.ToLower().EndsWith(".csv"))
+        {
+            await ReadCSVData(e.File);
+        }
+        else if(e.File.Name.ToLower().EndsWith(".xls") || e.File.Name.ToLower().EndsWith(".xls"))
+        {
+            var msg = $"Error reading the file: {e.File.Name} \n kindly save as *.csv and try again!!!";
+            MsgBoxHelper(msg,"warn","","null",true);
+        }
+        else
+        {
+             var msg = $"Error reading the file: {e.File.Name} \n file type not supported!";
+            MsgBoxHelper(msg,"warn","","null",true);
+        }
+    }
+    private async Task ReadCSVData(IBrowserFile file)//
+    {
         try
         {
-            var file = e.File;
+            //var file = e.File;
             using (var reader = new StreamReader(file.OpenReadStream()))
             {
                 string? line = string.Empty;
@@ -729,6 +775,7 @@
             var lastData = dataArray[dataArray.Count - 1];
             double.TryParse(lastData[0], out depth);
             strokeInfo.Add(depth);
+            Console.WriteLine($"geeting and setting stroke info {strokeInfo.Count}");
         }
     }
     private void MutateStrokeInfo()
@@ -736,6 +783,7 @@
         if(strokeInfo.Count >= state.StrokeInfo.Value.Count)
         {
             store.Mutate<List<double>>("StrokeInfo",strokeInfo);
+            Console.WriteLine($"from mutate stroke info index:{strokeInfo.Count} state:{state.StrokeInfo.Value.Count}");
         }
     }
     private void MutateDataArray()
@@ -808,7 +856,7 @@
         store.Mutate<bool>("IsNewDataClicked",isNewData);
         if(isNewData)
         {
-            ClearAll();
+            InitiateNewData();
             await jSRuntime.InvokeVoidAsync("showFileDialog");
         }
         else if(!isNewData && state.IsDataLoaded.Value && dataArray.Count > 0)
@@ -819,6 +867,13 @@
         else if(!isNewData && !state.IsDataLoaded.Value)
         {
             MsgBoxHelper("Kindly click on New to start a new project","warn","","null",true);
+        }
+    }
+    private void InitiateNewData()
+    {
+        if((state.Project.Value.Id != "" && state.DataArray.Value.Count > 0) || (state.Project.Value.Id == "" && state.DataArray.Value.Count > 0))
+        {
+            ClearAll();
         }
     }
 }

@@ -63,9 +63,9 @@ class WriteToFile
         string _data = dataBuilder.ToString();
         return _data;
     }
-    public async void WriteToCSVFile(string data)
+    public async void WriteToCSVFile(string path,string data)
     {
-        string path = $"{Guid.NewGuid().ToString()}.csv";
+        //string path = $"{Guid.NewGuid().ToString()}.csv";
         await jSRuntime.InvokeVoidAsync("saveAsFile", path, data);
     }
     public static void WriteDataToFile(string filepath, string data)
