@@ -1,0 +1,92 @@
+﻿@page "/subsample"
+@inject DatabaseService database
+@inject NavigationManager navigationManager
+@inject IStore store
+@inject State state
+@inject WriteToFile fileWriter
+
+<div class="lab">
+<span @onclick="@(() => {navigationManager.NavigateTo("/lab");})" class="red x">X</span> 
+<br><br>
+@if(allSOTR.Count > 0)
+{
+    <div class="dynamic-table ">
+        <h3 class="heading">Sub Sampled Test Results</h3>
+        <div class="table large">
+            <div class="table-body">
+                <table>
+                    <thead>
+                        @if(sampleHeaders.Count > 0)
+                        {
+                            <tr>
+                            @foreach(var header in sampleHeaders)
+                            {
+                                    @if(!string.IsNullOrWhiteSpace(header))
+                                    {
+                                        <th>@header</th>
+                                    }
+                            }
+                            </tr>
+                        }
+                    </thead>
+                    <tbody>
+                        @foreach(var s in allSOTR)
+                        {
+                            count++;
+                            <tr>
+                                <td>@count</td>
+                                <td>@s.Date.ToString("dd/MM/yyyy")</td>
+                                <td>@state.Project.Value.Info.TestNumber</td>
+                                <td>@state.Project.Value.Info.Easting</td>
+                                <td>@state.Project.Value.Info.Northing</td>
+                                <td>@s.TestId</td>
+                                <td>@s.BoreholeStartDepth</td>
+                                <td>@s.BoreholeEndDepth</td>
+                                <td>@s.SampleRecovery</td>
+                                <td>@s.SubSampleInCsv</td>
+                                <td>@s.SubSampleIdInCsv</td>
+                            </tr>
+                           // BuildCsvString(count,s);
+                        }
+                    </tbody>
+                </table>
+            </div>
+    </div>
+</div>
+}
+</div>
+
+
+@code {
+    int count  = 0;
+    List<SampleInfo> allSOTR = new();
+    List<string> sampleHeaders = new () 
+    {
+        "S/N", "Date", "Borehole Id", "Easting","Northing","Test Id", "Start depth (m)", "End Depth (m)", "Recovery (cm)","Sub sample", "Sub Sample Id"
+    };
+    protected override void OnInitialized()
+    {
+        GetAllSOTR();
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        count = 0;
+    }
+        private void GetAllSOTR()
+    {
+        if(state.Project.Value.Id != "")
+        {
+            var data = database.ReadAll("SOTR");
+            foreach(var d in data)
+            {
+                var val = JsonConvert.DeserializeObject<SampleInfo>(d.Value);
+                if(val != null && val.ProjectId == state.Project.Value.Id)
+                {
+                    allSOTR.Add(val);
+                }
+            }
+            allSOTR = allSOTR.Where(s => s.SampleType.Equals("sample")).OrderBy(x => x.Date).ToList();
+        }
+    }
+
+}

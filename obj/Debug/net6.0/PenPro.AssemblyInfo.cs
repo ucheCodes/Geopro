@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PenPro")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+897c4edf6a087ac0b36ae6f697d8bc069f200d57")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5df7c85c7fa916d2371d27d44d113174962036f8")]
 [assembly: System.Reflection.AssemblyProductAttribute("PenPro")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PenPro")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

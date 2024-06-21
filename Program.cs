@@ -18,6 +18,8 @@ builder.Services.AddScoped<State>();
 builder.Services.AddScoped<WriteToFile>();
 builder.Services.AddScoped<UploadImage>();
 builder.Services.AddScoped<PlotModelService>();
+builder.Services.AddScoped<RectanglePlotService>();
+builder.Services.AddScoped<INPOIExcelReader,NPOIExcelReader>();
 
 var app = builder.Build();
 

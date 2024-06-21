@@ -11,7 +11,9 @@
             <h3>@Title</h3>
         </div>
         <span class="@msgClass">@sotrMsg</span>
-        @*<p class="p">@state.Project.Value.Info.TestNumber     E: @state.Project.Value.Info.Easting m / N: @state.Project.Value.Info.Northing m</p>*@
+        <div class="input-group">
+            <p class="p">@state.Project.Value.Info.TestNumber     E: @state.Project.Value.Info.Easting m / N: @state.Project.Value.Info.Northing m</p>
+        </div>
         <div class="input-group">
             <select @bind="testType">
                 <option value="">Select Test Type</option>
@@ -24,6 +26,7 @@
             <div class="input-group">
                 <select @bind="selectCalc">
                     <option value="">Compute sample parameter</option>
+                    <option value="log">Add Boring Log</option>
                     <option value="uw">Unit Weight</option>
                     <option value="nmc">Natural Moisture Content (%)</option>
                     <option value="torvane">Torvane Test</option>
@@ -37,16 +40,16 @@
                     <option value="false">False</option>
                 </select>
             </div>
-            <div class="input-group">
-                <select @bind="samplingTool">
-                    <option value="">Select Sampling tool</option>
-                    @foreach(var s in samplingToolDict)
-                    {
-                        <option value="@s.Value">@s.Key</option>
-                    }
-                </select>
-            </div>
         }
+        <div class="input-group">
+            <select @bind="samplingTool">
+                <option value="">Select Sampling tool</option>
+                @foreach(var s in samplingToolDict)
+                {
+                    <option value="@s.Value">@s.Key</option>
+                }
+            </select>
+        </div>
         <div class="input-group">
             <input @bind="testId" type="text" placeholder="Test Id" name="input1">
         </div>
@@ -63,9 +66,6 @@
         {
             <div class="input-group">
                 <input @bind="subSampleCsv" type="text" placeholder="sub sampling in meters e.g 0.2,0.4,0.6" name="input1">
-            </div>
-            <div class="input-group">
-                <input @bind="subSampleIdCsv" type="text" placeholder="sub sample id e.g 1Wax A,2Bag A, 3Bag C" name="input1">
             </div>
             <div class="input-group">
                 Select Sample Photo:
@@ -230,6 +230,45 @@
                 <p>Unconfined Compressive Strength (MPa):  <b>@SOTR.Calculus.PP.resultInMpa</b> MPa</p>
             </div>
         }
+        else if(selectCalc == "log")
+        {
+            <h3>Create Borehole Logs</h3>
+            <span class="@msgClass">@msg @SOTR.BoreholeLogList.Count</span>
+            @if(SOTR.BoreholeLogList.Count > 0)
+            {
+                int i = 1;
+                <div class="input-group">
+                    <select @onchange="OnBHLogParameterChange">
+                        <option value="">click  +  to add new  -  remove</option>
+                        @foreach(var b in SOTR.BoreholeLogList)
+                        {
+                            <option value="@b.id">wc @i (@b.strata) : @b.startDepth / @b.endDepth m</option>
+                            i++;
+                        }
+                    </select>
+                </div>
+            }
+            <div class="input-group">
+                <select @bind="boreholeStrata">
+                    <option value="">Select Strata</option>
+                    <option value="sand">Sand</option>
+                    <option value="clay">Clay</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <input @bind="boreholeStartDepth" type="text" placeholder="borehole start depth in meter" name="input1">
+            </div>
+            <div class="input-group">
+                <input @bind="boreholeEndDepth" type="text" placeholder="borehole end depth in meter" name="input1">
+            </div>
+            @if(SOTR.BoreholeLogList.Count > 0)
+            {
+                <div class="circle-btns">
+                    <div @onclick="AddLog" class="items"><span>+</span></div>
+                    <div @onclick="RemoveLog" class="items"><span>-</span></div>
+                </div>
+            }
+        }
         <span class="@msgClass">@calcMsg</span>
         <button @onclick="SubmitCalculus" class="btn">Compute</button>
         </div>
@@ -261,8 +300,11 @@
     string calcMsg = "";
     string msgClass = "red";
     string testId = "";
-    string boringStartDepth = "";
+    string boringStartDepth = "";//for sample
     string boringEndDepth = "";
+    string boreholeStartDepth = "";//for logs
+    string boreholeEndDepth = "";
+    string boreholeStrata ="";
     string sampleDrillOut = "";
     string subSampleIdCsv = "";
     string subSampleCsv = "";
@@ -273,6 +315,7 @@
     string containsCarbonate = "";
     bool showSampleImage = true;
     string sampleImagePath = "";
+    (string id, string strata, double startDepth, double endDepth) selectedBoreholeLog = ("","",0,0);
     /*unit weight/ bulk density*/
     string weightOfRingInGrams = "";
     string weightOfRingAndWetSampleInGrams = "";
@@ -346,7 +389,8 @@
                     SubSampleInCsv = subSampleCsv,
                     SubSampleIdInCsv = subSampleIdCsv,
                     SamplingTool = samplingTool,
-                    Calculus = sotr.Calculus
+                    Calculus = sotr.Calculus,
+                    BoreholeLogList = sotr.BoreholeLogList
                 };
                 UpdateSOTR(_sotr);
             }
@@ -409,6 +453,10 @@
                 SOTR.Calculus.PP = pp;
             }
         }
+        else if(selectCalc == "log")
+        {
+            AddBoreholeLog();
+        }
     }
     private async void HandleSampleUpload(InputFileChangeEventArgs e)
     {
@@ -419,19 +467,17 @@
     }
     private bool UpdateSOTR(SampleInfo sotr)
     {
-        Console.WriteLine("update sotr hit");
         if(sotr.Id != "")
         {
             string key = JsonConvert.SerializeObject(sotr.Id);
             string value = JsonConvert.SerializeObject(sotr);
-            var isAdded = true;//database.Create("SOTR",key,value);
+            var isAdded = database.Create("SOTR",key,value);
             if(isAdded)
             {
                 UpdateSotrData.InvokeAsync(sotr);
                 ClearAll();
                 CloseDialog();
             }
-            //Console.WriteLine($"before {sotr.BoreholeStartDepth} {sotr.BoreholeEndDepth} {sotr.SampleDrillOut} {sotr.SamplingTool} {sotr.SubSampleInCsv} {sotr.SubSampleIdInCsv}");
             return isAdded;
         }
         return false;
@@ -454,6 +500,9 @@
             sampleDesc = SOTR.SampleDesc;
             sampleImagePath = SOTR.SampleImagePath;
             showSampleImage = true;
+            subSampleCsv = SOTR.SubSampleInCsv;
+            subSampleIdCsv = SOTR.SubSampleIdInCsv;
+            samplingTool = SOTR.SamplingTool;
             if(SOTR.ContainsCarbonate){containsCarbonate = "true";}
 
             /*wet unit weight/ bulk density*/
@@ -462,6 +511,10 @@
             //Nmc
             GetNmcParameters();
             SetNmcParameters();
+            //log
+            //SetBHLogParams();
+            GetBHLogParams();
+
             //Torvane
             tvScaleReading = SOTR.Calculus._Torvane.scaleReading;
             tvVaneValue = SOTR.Calculus._Torvane.vaneBlade;
@@ -677,6 +730,91 @@
         weightOfRingAndDrySampleNmc = "";
         nmcDepth = "";
     }
+
+    //Log Parameters
+    private void AddBoreholeLog()
+    {
+        double bsd = 0; double bed = 0;
+        if(selectedBoreholeLog.id == ""){selectedBoreholeLog.id = Guid.NewGuid().ToString();}
+        if(double.TryParse(boreholeStartDepth, out bsd) && double.TryParse(boreholeEndDepth, out bed) && bsd < bed && boreholeStrata != "")
+        {
+            string id = selectedBoreholeLog.id;
+            selectedBoreholeLog = (id,boreholeStrata,bsd,bed);
+            //var bhList = SOTR.BoreholeLogList;
+            var bhList = SOTR.BoreholeLogList.Where(x => x.id != id).ToList() ?? new();
+            bhList.Add(selectedBoreholeLog);
+            SOTR.BoreholeLogList = bhList;
+            msg = $"{boreholeStrata} : {bsd} - {bed} added! click + to add new";
+            msgClass = "";
+        }
+        else
+        {
+            msg = "log values must be positive, start depth must be less than end depth \n select borehole strata";
+            msgClass = "red";
+        }
+    }
+    private void AddLog()
+    {
+        if(selectedBoreholeLog.id == "" && (boreholeStartDepth != "" && boreholeEndDepth != ""))
+        {
+            AddBoreholeLog();
+        }
+        OnBHLogParameterChange(new ChangeEventArgs { Value = ""});
+        msg = "";
+    }
+    private void RemoveLog()
+    {
+        if( selectedBoreholeLog.id != "")
+        {
+            string id = selectedBoreholeLog.id;
+            var bhList = SOTR.BoreholeLogList;
+            SOTR.BoreholeLogList = SOTR.BoreholeLogList.Where(d => d.id != selectedBoreholeLog.id).ToList();
+
+            OnBHLogParameterChange(new ChangeEventArgs { Value = ""});
+            msg = $"removed {selectedBoreholeLog.strata} {selectedBoreholeLog.startDepth} - {selectedBoreholeLog.endDepth} m";
+            msgClass = "red";
+        }
+        else{msg = ""; msgClass = "";}
+    }
+    private void OnBHLogParameterChange(ChangeEventArgs e)
+    {
+        string id = e.Value?.ToString() ?? "";
+        if(id == "")
+        {
+            selectedBoreholeLog = ("","",0,0);
+            ClearBHLogParams();
+        }
+        else
+        {
+            selectedBoreholeLog = SOTR.BoreholeLogList.FirstOrDefault(x => x.id == id);
+            SetBHLogParams();
+        }
+        msg = "";
+    }
+    private void ClearBHLogParams()
+    {
+        boreholeStartDepth = "";
+        boreholeEndDepth = "";
+        boreholeStrata = "";
+    }
+    private void SetBHLogParams()
+    {
+        boreholeStartDepth = selectedBoreholeLog.startDepth.ToString();
+        boreholeEndDepth = selectedBoreholeLog.endDepth.ToString();
+        boreholeStrata = selectedBoreholeLog.strata;
+    }
+    private void GetBHLogParams()
+    {
+        if(SOTR.BoreholeLogList.Count > 0)
+        {
+            selectedBoreholeLog = SOTR.BoreholeLogList[0];
+            SetBHLogParams();
+        }
+        else{
+            selectedBoreholeLog = ("","",0,0);
+            ClearBHLogParams();
+        }
+    }
     private void ClearAll()
     {
         testId = "";
@@ -688,12 +826,18 @@
         showSampleImage = false;
         sampleImagePath = "";
         sampleDesc = "";
+        samplingTool = "";
+        subSampleCsv = "";
+        subSampleIdCsv = "";
         /*wet unit weight/ bulk density*/
         selectedUW = ("","",0,0,0,0,0,0,0,0,0,0,0);
         ClearUWParams();
         //Nmc
         selectedNmcParameters = ("",0,0,0,0,0);
         ClearNMCParams();
+        //logs
+        selectedBoreholeLog = ("","",0,0);
+        ClearBHLogParams();
         //Tv
         tvScaleReading = "";
         tvVaneValue = "";

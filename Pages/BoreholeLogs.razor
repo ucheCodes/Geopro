@@ -2,15 +2,17 @@
 @inject DatabaseService database
 @inject PlotModelService PlotModelService
 @inject NavigationManager navigationManager
+@inject RectanglePlotService rectanglePlot
 @inject IJSRuntime jSRuntime
 @inject IStore store
 @inject State state
+@implements IDisposable
 
 <InputFile type="file" id="image" style="display: none;" OnChange="@LoadFile" accept=".png,.jpg,.jpeg" />
 <div class="graph active">
-    <span @onclick="@(() => {navigationManager.NavigateTo("/lab");})" class="x red  @((state.Project.Value.Info.Name != "") ? "active" : "")">X</span>
-        <span @onclick="@(e =>Screenshot("chart3"))" class="camera @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-camera-retro"></i></span>
-    <div id="chart3">
+    <span @onclick="GotoLab" class="x red  @((state.Project.Value.Info.Name != "") ? "active" : "")">X</span>
+    <span @onclick="@(e =>Screenshot("chart3"))" class="camera @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-camera-retro"></i></span>
+<div id="chart3">
     @if(state.Project.Value.Info.Title != "")
     {
         var info = state.Project.Value.Info;
@@ -44,7 +46,7 @@
     }
 
     <div>
-        <BlazorPlotView Model="@legendModel" Width="140" Height="550"/>
+        <BlazorPlotView Model="@sotrModel" Width="140" Height="550"/>
         <BlazorPlotView Model="@boreholeModel" Width="150" Height="550"/>
         @if(state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0)
         {
@@ -54,10 +56,10 @@
         <BlazorPlotView Model="@wcModel" Width="160" Height="550" />
         <BlazorPlotView Model="@uwModel" Width="180" Height="550" />
     </div>
-    </div>
+ </div>
 </div>
 @code{
-    PlotModel legendModel = new PlotModel {Title = "" };
+    PlotModel sotrModel = new PlotModel {Title = "" };
     PlotModel boreholeModel = new PlotModel {Title = ""};
     PlotModel coneModel = new PlotModel { Title = "" };
     PlotModel poreModel = new PlotModel();
@@ -70,15 +72,11 @@
     List<SampleInfo> allSOTR = new List<SampleInfo>();
     protected override void OnInitialized()
     {
-        //coneModel = PlotModelService.CreatePlotModel();
-        //coneModel = PlotConeModel();
-       //plotModel = PlotModelService.CreateRectangleWithText(3,6,1,3);
        GenerateBoreholeLogs();
     }
      protected override void OnAfterRender(bool firstRender)
      {
         count++;
-        GenerateBoreholeLogs();
      }
     private void GetAllSOTR()
     {
@@ -91,12 +89,11 @@
                 if(val != null && val.ProjectId == state.Project.Value.Id)
                 {
                     allSOTR.Add(val);
-                    // Console.WriteLine($"sotr {val.Id} {val.ProjectId} {val.TestId} {val.BoreholeStartDepth} {val.BoreholeEndDepth}");
                 }
             }
         }
     }
-    private PlotModel PlotConeModel()
+    private PlotModel PlotConeModel(double yMax)
     {
         var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
         if(computedCol != null && computedCol.Count() > 11)
@@ -107,14 +104,14 @@
             List<double> qnet = computedCol[11];
             if(depth.Count > 0 && qc.Count > 0 && qt.Count > 0 && qnet.Count > 0)
             {
-                var cm = PlotModelService.PlotConeResistance(depth, qc,qt, qnet);
+                var cm = PlotModelService.PlotConeResistance(depth, qc,qt, qnet,yMax);
                 return cm;
             }
         }
         return new PlotModel();
     }
     
-    private PlotModel PlotPorePressureModel()
+    private PlotModel PlotPorePressureModel(double yMax)
     {
         var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
         if(computedCol != null && computedCol.Count() > 11)
@@ -123,7 +120,7 @@
             List<double> u2 = computedCol[3];
             if(depth.Count > 0 && u2.Count > 0)
             {
-                var pm = PlotModelService.PlotPorePressure(depth, u2);
+                var pm = PlotModelService.PlotPorePressure(depth, u2,yMax);
                 return pm;
             }
         }
@@ -136,18 +133,6 @@
             GetAllSOTR();
             var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
             double cptMaxDepth = 0; double maxBoreholeDepth = 0;
-            var samples = new List<SampleInfo>()
-            {
-                new SampleInfo(){BoreholeStartDepth = 0, BoreholeEndDepth = 3, SampleType = "clay"},
-                new SampleInfo(){BoreholeStartDepth = 3, BoreholeEndDepth = 6, SampleType = "sand"},
-                new SampleInfo(){BoreholeStartDepth = 7, BoreholeEndDepth = 10, SampleType = "sandy clay"},
-                new SampleInfo(){BoreholeStartDepth = 10, BoreholeEndDepth = 15, SampleType = "clayey sand"},
-                new SampleInfo(){BoreholeStartDepth = 15, BoreholeEndDepth = 16, SampleType = "sand"},
-                new SampleInfo(){BoreholeStartDepth = 16, BoreholeEndDepth = 20, SampleType = "silt"},
-                new SampleInfo(){BoreholeStartDepth = 20, BoreholeEndDepth = 23, SampleType = "granite"},
-                new SampleInfo(){BoreholeStartDepth = 25, BoreholeEndDepth = 30, SampleType = "boulders"},
-                new SampleInfo(){BoreholeStartDepth = 34, BoreholeEndDepth = 42, SampleType = "rock"},
-            };//for remove
 
             if(allSOTR.Count > 0)
             {
@@ -165,18 +150,17 @@
                     maxBoreholeDepth = sampleMaxDepth;
                 }
                 allSOTR = allSOTR.OrderBy(x => x.BoreholeEndDepth).ToList();
-                var plotModel = PlotModelService.GenerateBoreholeLogs(allSOTR,maxBoreholeDepth);
-                legendModel = plotModel.Legend;
-                boreholeModel = plotModel.Borehole;
-                coneModel = PlotConeModel();
-                poreModel = PlotPorePressureModel();
-                uwModel = PlotModelService.PlotUnitWeight(allSOTR);
-                wcModel = PlotModelService.PlotWaterContent(allSOTR);
+                sotrModel = rectanglePlot.PlotSampleInfo(allSOTR,maxBoreholeDepth);
+                boreholeModel = PlotModelService.PlotStrata(allSOTR,maxBoreholeDepth);
+                coneModel = PlotConeModel(maxBoreholeDepth);
+                poreModel = PlotPorePressureModel(maxBoreholeDepth);
+                uwModel = PlotModelService.PlotUnitWeight(allSOTR,maxBoreholeDepth);
+                wcModel = PlotModelService.PlotWaterContent(allSOTR,maxBoreholeDepth);
             }
         }
         catch(Exception e)
         {
-            Console.WriteLine("from generate bore: "+e.Message);
+            Console.WriteLine("from generate borehole: "+e.Message);
         }
     }
     private async void ChangeImage(int id)
@@ -223,5 +207,13 @@
             await jSRuntime.InvokeVoidAsync("screenShot",id);
             navigationManager.NavigateTo($"/output");
         }
+    }
+    private void GotoLab()
+    {
+        navigationManager.NavigateTo("/lab");
+    }
+    public void Dispose()
+    {
+        boreholeModel = new PlotModel();
     }
 }

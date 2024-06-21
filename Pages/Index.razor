@@ -1,13 +1,14 @@
 ﻿@page "/"
 @inject DatabaseService database
 @inject NavigationManager navigationManager
+@inject INPOIExcelReader NPOIExcelReader
 @inject IJSRuntime jSRuntime
 @inject IFunctions functions
 @inject IStore store
 @inject State state
 @inject WriteToFile fileWriter
 
-<InputFile type="file" id="fileInput" style="display: none;"  OnChange="@HandleFileChange" accept=".csv,.txt"/>
+<InputFile type="file" id="fileInput" style="display: none;"  OnChange="@HandleFileChange" accept=".csv,.xls,.xlsx"/>
 <section class="container">  
   <div class="menu">
     <ul class="menu-items">
@@ -23,6 +24,7 @@
             <span class="icons-group @((activeMenu == file) ? "active" : "")">
                 <i @onclick="(() => ShowFileDialog(true))" class="fas fa-file-csv"></i>
                 <i @onclick="(() => {showProjects = true;})" class="fas fa-eye"></i>
+                <i @onclick="_Erase" class="fas fa-eraser"></i>
                 <i @onclick="_ClearAll"  class="fas fa-trash"></i>
             </span>
             <span class="icons-group @((activeMenu == edit) ? "active" : "")">
@@ -107,6 +109,7 @@
 
     string[]? lastDataArray;
     List<string[]> dataArray = new List<string[]>();
+    List<string[]> modifiedDepthInDataArray = new List<string[]>();
     List<double[]> filteredRawDataInRowsArray = new List<double[]>();
     List<double> bulkDensityInCol = new List<double>();
     List<string> soilNatureInCols = new();
@@ -119,7 +122,6 @@
             create boring logs and plot torvane (undrained shear strength (su)), pp and UU
             confirm formula binding relationship of yd, yw and nmc in excel
             compare with new data
-            excel data reader for .xls
         */
         /*
          Now that I am working with samples, modify processed such that
@@ -200,6 +202,9 @@
         {
             case "ClearAll":
                 ClearAll();
+            break;
+            case "Erase":
+                Erase();
             break;
             case "Save":
                 //SaveNewProject();
@@ -375,8 +380,12 @@
                         double qt = row[1] + (row[3] * (1 - a));
                         double qnet = qt - totalOverburden;
                         double Qt = qnet / effectiveOverburden;
-                        double rf = row[2] / qt;
+                        double rf = (row[2] / qt) * 100;
                         double bq = (row[3] - u0) / qnet;//find out u0
+                        /*if(rf > 50)
+                        {
+                             Console.WriteLine($"at {row[0]}m, {row[2]} / {qt} = {(row[2] / qt)} and {rf}%");
+                        }*/
                         PopulateRawDataIntoColumns(dataIndex, qt);
                         PopulateRawDataIntoColumns(dataIndex + 1, qnet);//not needed here
                         PopulateRawDataIntoColumns(dataIndex + 2, Qt);//not needed here
@@ -569,7 +578,8 @@
                 }
                 index++;
             }
-                dataArray.Add(newValues);
+                //dataArray.Add(newValues);
+                modifiedDepthInDataArray.Add(newValues);
             }
         }
         catch(Exception e)
@@ -631,35 +641,38 @@
         double.TryParse(rawDataArray[0][0], out initialStartDepth);//get the very first data value
         foreach(var dataArr in rawDataArray)
         {
-            double index0;//reps depth column
-             double index1;//reps resistance column
-             int j = 0;
-            double[] filteredRow = new double[dataArr.Length];
-            if(double.TryParse(dataArr[0], out index0) && double.TryParse(dataArr[1], out index1) && index0 >= 0 && index1 > 0)
+            if(dataArr.Length > 0)
             {
-                foreach(var data in dataArr)
+                double index0;//reps depth column
+                double index1;//reps resistance column
+                int j = 0;
+                double[] filteredRow = new double[dataArr.Length];
+                if(double.TryParse(dataArr[0], out index0) && double.TryParse(dataArr[1], out index1) && index0 >= 0 && index1 > 0)
                 {
-                    double value;
-                    if(double.TryParse(data, out value))
+                    foreach(var data in dataArr)
                     {
-                        if(i >= 0 && j == 0)//j reps the column of data contain depth
+                        double value;
+                        if(double.TryParse(data, out value))
                         {
-                            if(i == 0)//i keeps record of the number of rows of where cone res. is positive
+                            if(i >= 0 && j == 0)//j reps the column of data contain depth
                             {
-                                penetrationStartDepth = value;
-                                depthDifference = penetrationStartDepth - initialStartDepth;
-                            } 
-                            var newCalculatedDepth = value - depthDifference;
-                            value = Math.Round(newCalculatedDepth, 2);
+                                if(i == 0)//i keeps record of the number of rows of where cone res. is positive
+                                {
+                                    penetrationStartDepth = value;
+                                    depthDifference = penetrationStartDepth - initialStartDepth;
+                                } 
+                                var newCalculatedDepth = value - depthDifference;
+                                value = Math.Round(newCalculatedDepth, 2);
+                            }
+                            filteredRow[j] = value;
+                            PopulateRawDataIntoColumns(j, value);
+                            PopulateBulkDensityIntoColumns(j,value);
+                            j++;
                         }
-                        filteredRow[j] = value;
-                        PopulateRawDataIntoColumns(j, value);
-                        PopulateBulkDensityIntoColumns(j,value);
-                        j++;
                     }
+                    i++;
+                    filteredDataArray.Add(filteredRow);
                 }
-                i++;
-                filteredDataArray.Add(filteredRow);
             }
         }
         return filteredDataArray;
@@ -694,22 +707,73 @@
     }
     private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
-        if(e.File.Name.ToLower().EndsWith(".csv"))
+        try
         {
-            await ReadCSVData(e.File);
+            if(e.File.Name.ToLower().EndsWith(".csv"))
+            {
+                await ReadCSVData(e.File);
+            }
+            else if(e.File.Name.ToLower().EndsWith(".xls") || e.File.Name.ToLower().EndsWith(".xls"))
+            {
+                await ReadExcelData(e.File);
+            }
+            else
+            {
+                var msg = $"Error reading the file: {e.File.Name} \n file type not supported!";
+                MsgBoxHelper(msg,"warn","","null",true);
+            }
         }
-        else if(e.File.Name.ToLower().EndsWith(".xls") || e.File.Name.ToLower().EndsWith(".xls"))
+        catch{}
+    }
+    private async Task ReadExcelData(IBrowserFile file)
+    {
+        try
         {
-            var msg = $"Error reading the file: {e.File.Name} \n kindly save as *.csv and try again!!!";
-            MsgBoxHelper(msg,"warn","","null",true);
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+                memoryStream.Position = 0; 
+                var excelDataArray = NPOIExcelReader.ReadExcelData(memoryStream, file.Name);
+                ModifyExcelDataArray(excelDataArray);
+            }
         }
-        else
+        catch(Exception e)
         {
-             var msg = $"Error reading the file: {e.File.Name} \n file type not supported!";
-            MsgBoxHelper(msg,"warn","","null",true);
+            Console.WriteLine(e.Message);
         }
     }
-    private async Task ReadCSVData(IBrowserFile file)//
+    private void ModifyExcelDataArray(List<string[]> excelDataArray)
+    {
+        if(state.IsNewDataClicked.Value && excelDataArray.Count > 2)
+        {
+            List<string[]> headerArray = new();
+            var headerIndex0 = excelDataArray[0];
+            var headerIndex1 = excelDataArray[1];
+
+            excelDataArray.RemoveRange(0, 2);
+            headerArray.Add(headerIndex0);
+            headerArray.Add(headerIndex1);
+            dataArray = excelDataArray;
+
+            PopulateHeaders(headerIndex0);
+            PopulateHeaderUnits(headerIndex1);
+
+            store.Mutate<List<string[]>>("HeaderArray",headerArray);
+            store.Mutate<bool>("IsDataLoaded",true);
+        }
+        else if(!state.IsNewDataClicked.Value && state.IsDataLoaded.Value && excelDataArray.Count > 2)
+        {
+           excelDataArray.RemoveRange(0, 2);
+           dataArray.AddRange(excelDataArray);
+        }
+        isFiltered = false;
+        isProcessed = false;
+        GetAndSetStrokeCount();
+        ViewRawData();
+        MutateStrokeInfo();
+        MutateDataArray();
+    }
+    private async Task ReadCSVData(IBrowserFile file)
     {
         try
         {
@@ -741,7 +805,8 @@
                             store.Mutate<bool>("IsDataLoaded",true);
                         }
                         else if(!state.IsNewDataClicked.Value && state.IsDataLoaded.Value &&  lineIndex > 1){
-                            ModifyDepthAndTimeValuesAndAppend(values);
+                            ModifyDepthAndTimeValuesAndAppend(values);//leave this for time appending
+                            dataArray.Add(values);
                         }
                         else if(!state.IsNewDataClicked.Value && !state.IsDataLoaded.Value){
                                 break;
@@ -773,9 +838,11 @@
         {
             double depth = 0;
             var lastData = dataArray[dataArray.Count - 1];
-            double.TryParse(lastData[0], out depth);
-            strokeInfo.Add(depth);
-            Console.WriteLine($"geeting and setting stroke info {strokeInfo.Count}");
+            if(lastData.Length > 0 && double.TryParse(lastData[0], out depth))
+            {
+                strokeInfo.Add(depth);
+            }
+           // Console.WriteLine($"geeting and setting stroke info {strokeInfo.Count} {dataArray.Count} {lastData.Length}");
         }
     }
     private void MutateStrokeInfo()
@@ -828,10 +895,15 @@
             MsgBoxHelper("This will clear the current project and all progress made!!!","warn","","ClearAll",true);
         }
     }
-    private void ClearAll()
+    private void _Erase()
     {
-        ClearChart();
-        store.Mutate<Project>("Project",new());
+        if(state.IsDataLoaded.Value)
+        {
+            MsgBoxHelper("This will erase all data in current project!!! Load new set of data to effect change!","warn","","Erase",true);
+        }
+    }
+    private void EraseCurrentProject()
+    {
         store.Mutate<Dictionary<int, string>>("HeaderUnitDict",new());
         store.Mutate<Dictionary<int, string>>("HeaderIndexDict",new());
         store.Mutate<List<double>>("StrokeInfo",new());
@@ -839,10 +911,21 @@
         store.Mutate<List<string[]>>("DataArray",new());
         store.Mutate<bool>("IsDataLoaded",false);
         store.Mutate<string>("Data2Show","");
+        store.Mutate<Dictionary<int, List<double>>>("FilteredAndComputedCPTDataInColumnsDict",new ());
         isFiltered = false;
         isProcessed = false;
         strokeInfo = new();
         dataArray = new();
+        ClearChart();
+    }
+    private void Erase()
+    {
+        EraseCurrentProject();
+    }
+    private void ClearAll()
+    {
+        store.Mutate<Project>("Project",new());
+        EraseCurrentProject();
     }
     private void ClearChart()
     {

@@ -5,7 +5,6 @@
 @inject State state
 @inject WriteToFile fileWriter
 
-@*
 <div class="lab">
 <span @onclick="@(() => {navigationManager.NavigateTo("/lab");})" class="red x">X</span> 
 @if(allSOTR.Count > 0)
@@ -14,17 +13,21 @@
         <h3 class="heading">Parameters of Soil Test Results</h3>
         <div class="item">
             <button @onclick="WriteToCSVFile" class="btn">Save Data</button>
+            <select @bind="selectcalc">
+                <option value="">View By Test Type</option>
+                <option value="nmc">Moisture Content</option>
+                <option value="uw">Unit Weight</option>
+                <option value="log">Borehole Logs</option>
+            </select>
         </div>
-        <p class="p red">N:B :- yw (bulk unit weight), yd (dry unit weight), nmc (Natural Moisture Content), su (undrained shear strength)</p>
-        <p class="p red">pp is result of the Pocket Penetrometer test for unconfined compressive strength of soil</p>
         <div class="table large">
             <div class="table-body">
                 <table>
                     <thead>
-                        @if(sampleHeaders.Count > 0)
+                        @if(Headers.Count() > 0)
                         {
                             <tr>
-                            @foreach(var header in sampleHeaders)
+                            @foreach(var header in Headers[selectcalc])
                             {
                                     @if(!string.IsNullOrWhiteSpace(header))
                                     {
@@ -37,19 +40,43 @@
                     <tbody>
                         @foreach(var calc in allSOTR)
                         {
-                            <tr>
-                                <td>@calc.TestId</td>
-                                <td>@calc.Calculus.BulkDensity.resultIngcm3</td>
-                                <td>@calc.Calculus.BulkDensity.resultInKNm3</td>
-                                <td>@calc.Calculus.DryDensity.resultIngcm3</td>
-                                <td>@calc.Calculus.DryDensity.resultInKNm3</td>
-                                <td>@calc.Calculus.MoistureContent.result</td>
-                                <td>@calc.Calculus._Torvane.resultInKpa</td>
-                                <td>@calc.Calculus._Torvane.resultInMpa</td>
-                                <td>@calc.Calculus.PP.resultInKpa</td>
-                                <td>@calc.Calculus.PP.resultInMpa</td>
-                            </tr>
-                            BuildCsvString(calc);
+                            if(selectcalc == "uw")
+                            {
+                                @foreach(var uw in calc.Calculus.UnitWeightParamList)
+                                {
+                                    <tr>
+                                    <td>@calc.TestId</td>
+                                    <td>@uw.containerLabel</td>
+                                    <td>@uw.depth</td>
+                                    <td>@uw.weightOfRingInGram</td>
+                                    <td>@uw.weightOfRingAndWetSampleInGram</td>
+                                    <td>@uw.weightOfRingAndDrySampleInGram</td>
+                                    <td>@uw.diameterOfRingInMillimeter</td>
+                                    <td>@uw.heightOfRingInMillimeter</td>
+                                    <td>@uw.volumeofRingInMillimeter3.ToString("F2")</td>
+                                    <td>@uw.volumeofRingInCentimeter3.ToString("F2")</td>
+                                    <td>@uw.bulkUnitWeightInKNm3.ToString("F2")</td>
+                                    <td>@uw.dryUnitWeightInKNm3.ToString("F2")</td>
+                                    <td>@uw.submergedDensityInKNm3.ToString("F2")</td>
+                                    </tr>
+                                }
+                                <td></td>
+                            }
+                            else if(selectcalc == "nmc")
+                            {
+                                @foreach(var wc in calc.Calculus.MoistureContentParamList)
+                                {
+                                    <tr>
+                                        <td>@calc.TestId</td>
+                                        <td>@wc.depth</td>
+                                        <td>@wc.weightOfRing</td>
+                                        <td>@wc.weightOfRingAndWetSample</td>
+                                        <td>@wc.weightOfRingAndDrySample</td>
+                                        <td>@wc.result</td>
+                                    </tr>
+                                }
+                            }
+                            //BuildCsvString(calc);
                         }
                     </tbody>
                 </table>
@@ -70,20 +97,32 @@
     string msgBoxType = "";
     string msgBoxRoute = "";
     string msgBoxOkString = "";
+    string selectcalc = "uw";
     List<SampleInfo> allSOTR = new();
     string csvData = "";
-    List<string> sampleHeaders = new () 
+    Dictionary<string,List<string>> Headers = new Dictionary<string,List<string>>()
     {
-        "Test Id","yw (g/cm^3)", "yw (kN/m^3)", "yd (g/cm^3)","yd (kN/m^3)", "nmc (%)","su (kPa)", "su (MPa)", "pp (kPa)", "pp (Mpa)"
-    };//add units when adding calculations
+        {"uw",new List<string>()
+            {"Id","Tin Label","depth (m)","wt. Tin(g)","wt. tin + wet soil (g)","wt. tin + dry soil (g)",
+                "diameter of ring (mm)","height of ring (mm)","vol. of ring (mm3)","vol. of ring (cm3)","bulk density (KN/m3)",
+                "dry density (KN/m3)","sub. density (KN/m3)"
+            }
+        },
+        {
+            "nmc",new List<string>()
+            {
+                "Id","depth","wt. Tin(g)","wt. tin + wet soil (g)","wt. tin + dry soil (g)","result (%)"
+            }
+        }
+    };
     protected override void OnInitialized()
     {
         GetAllSOTR();
-        InitCsvData();
+        //InitCsvData();
     }
     private void InitCsvData()
     {
-        int count = 0;
+        /*int count = 0;
         foreach(var d in sampleHeaders)
         {
             if(count < sampleHeaders.Count - 1)
@@ -95,7 +134,7 @@
                 csvData += $"{d} \n";
             }
             count++;
-        }
+        }*/
     }
     private void GetAllSOTR()
     {
@@ -131,15 +170,15 @@
     }
     private void BuildCsvString(SampleInfo calc)
     {
-        string line = $"{calc.TestId},{calc.Calculus.BulkDensity.resultIngcm3},{calc.Calculus.BulkDensity.resultInKNm3},{calc.Calculus.DryDensity.resultIngcm3},{calc.Calculus.DryDensity.resultInKNm3},{calc.Calculus.MoistureContent.result}";
+        /*string line = $"{calc.TestId},{calc.Calculus.BulkDensity.resultIngcm3},{calc.Calculus.BulkDensity.resultInKNm3},{calc.Calculus.DryDensity.resultIngcm3},{calc.Calculus.DryDensity.resultInKNm3},{calc.Calculus.MoistureContent.result}";
         line += $"{calc.Calculus._Torvane.resultInKpa},{calc.Calculus._Torvane.resultInMpa},{calc.Calculus.PP.resultInKpa},{calc.Calculus.PP.resultInMpa}";
-        csvData += $"{line}\n";
+        csvData += $"{line}\n";*/
     }
     private void WriteToCSVFile()
     {
         if(csvData != "")
         {
-            fileWriter.WriteToCSVFile(csvData);
+            //fileWriter.WriteToCSVFile(csvData);
         }
     }
     private void CloseMessageBox(string value)
@@ -155,4 +194,3 @@
         }
     }
 }
-*@

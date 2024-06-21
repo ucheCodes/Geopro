@@ -237,30 +237,33 @@
             dataCount = dataArray.Count;
             foreach(var row in _dataArray)
             {
-                int index = 0; 
-                string rawTime = row[row.Length - 1];            
-                foreach(var item in row)
+                if(row.Length > 0)
                 {
-                    double value = 0; double timeInSeconds = 0;
-                    if(double.TryParse(rawTime, out timeInSeconds) && double.TryParse(item, out value))
+                    int index = 0; 
+                    string rawTime = row[row.Length - 1];            
+                    foreach(var item in row)
                     {
-                        double xTimeInMinutes = timeInSeconds / 60; 
-                        var yDecay = value;
-                        if(index != 0 && state.HeaderIndexDict.Value.ContainsKey(index))
+                        double value = 0; double timeInSeconds = 0;
+                        if(double.TryParse(rawTime, out timeInSeconds) && double.TryParse(item, out value))
                         {
-                            if(index == 1)//tip resistance decay
+                            double xTimeInMinutes = timeInSeconds / 60; 
+                            var yDecay = value;
+                            if(index != 0 && state.HeaderIndexDict.Value.ContainsKey(index))
                             {
-                                coneLogSeries.Points.Add(new DataPoint(Math.Log10(xTimeInMinutes),yDecay));
-                                coneRootSeries.Points.Add(new DataPoint(Math.Sqrt(xTimeInMinutes),yDecay));
-                            }
-                            else if(index == 3)//pore presure decay
-                            {
-                                poreLogSeries.Points.Add(new DataPoint(Math.Log10(xTimeInMinutes),yDecay));
-                                poreRootSeries.Points.Add(new DataPoint(Math.Sqrt(xTimeInMinutes),yDecay));
+                                if(index == 1)//tip resistance decay
+                                {
+                                    coneLogSeries.Points.Add(new DataPoint(Math.Log10(xTimeInMinutes),yDecay));
+                                    coneRootSeries.Points.Add(new DataPoint(Math.Sqrt(xTimeInMinutes),yDecay));
+                                }
+                                else if(index == 3)//pore presure decay
+                                {
+                                    poreLogSeries.Points.Add(new DataPoint(Math.Log10(xTimeInMinutes),yDecay));
+                                    poreRootSeries.Points.Add(new DataPoint(Math.Sqrt(xTimeInMinutes),yDecay));
+                                }
                             }
                         }
+                        index++;
                     }
-                    index++;
                 }
             }
         }

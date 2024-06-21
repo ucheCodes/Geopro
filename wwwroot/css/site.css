@@ -266,8 +266,8 @@
 .message-box .items button{
   width: 100px !important;
 }
-.item button{
-  width: 200px !important;
+.item button,.item select{
+  width: 150px !important;
 }
 
 .input-group {
@@ -279,7 +279,7 @@
 .input-group input[type="text"],select,.input-group p,.input-group span,
  .input-group input[type="number"],#textarea, .input-group input[type="file"] {
   width: 100%;
-  padding: 6px;
+  padding: 7px;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;

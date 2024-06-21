@@ -14,9 +14,16 @@
         <h3 class="heading">Summary of Test Results</h3>
         <div class="item">
             <button @onclick="EnableAddNewSample"  class="btn">New Test</button>
+            <button @onclick="@(() => {navigationManager.NavigateTo("/subsample");})"  class="btn">Sub samples</button>
             <button @onclick="@(() => {navigationManager.NavigateTo("/calculus");})"  class="btn">Show Parameters</button>
             <button @onclick="WriteToCSVFile" class="btn">Save Data</button>
             <button @onclick="ShowBoreholeLogs" class="btn">View Logs</button>
+            <select @onchange="ToggleTest">
+                <option value="">View By Test Type</option>
+                <option value="sample">Sample</option>
+                <option value="cpt">CPT</option>
+                <option value="composite">Composite</option>
+            </select>
         </div>
         <div class="table large">
             <div class="table-body">
@@ -70,10 +77,14 @@
 }
 </div>
 
-<div class="msg-dialog @((showMessageBox) ? "active" : "")">
-    <MessageBox msgType="@msgBoxType"
-        msg="@msgBoxInfo" okString="@msgBoxOkString" route="@msgBoxRoute" ShowMessageBox="CloseMessageBox"  />
-</div>
+@if(showMessageBox)
+{
+    <div class="msg-dialog @((showMessageBox) ? "active" : "")">
+        <MessageBox msgType="@msgBoxType"
+            msg="@msgBoxInfo" okString="@msgBoxOkString" route="@msgBoxRoute" ShowMessageBox="CloseMessageBox"  />
+    </div>
+}
+
 
 <div class="sample-dialog @((showSampleDialog) ? "active" : "")">
     <AddSample AllowEdit="allowSampleEdit" Title="@title" SOTR="sotr" UpdateSotrData="UpdateSotr" CloseSampleDialog="ToggleSampleDialog"  />
@@ -83,6 +94,7 @@
     <span @onclick="(() => {showSampleImage = false;})" class="red x">X</span> 
     <ViewSampleImage path="@sampleImagePath"/>
 </div>
+
 
 
 @code {
@@ -97,9 +109,11 @@
     string msgBoxRoute = "";
     string msgBoxOkString = "";
     string csvData = "";
+    string testType = "composite";
     SampleInfo sotr = new();
     string title = "Add a New Test Result";
     List<SampleInfo> allSOTR = new();
+    List<SampleInfo> allSOTRData = new();
     List<string> sampleHeaders = new () 
         {
             "S/N", "Date", "Borehole Id", "Easting","Northing","Test Id", "Start depth (m)", "End Depth (m)", "Recovery (cm)","Test Drill out", "Test Type", "Contains Carbonate","Edit","Delete","Sample Image", "Description"
@@ -147,6 +161,26 @@
         }
         ToggleSampleDialog(true);
     }
+    private void ToggleTest(ChangeEventArgs e)
+    {
+        testType = e.Value?.ToString() ?? "";
+        switch(testType)
+        {
+            case "composite":
+                allSOTR = allSOTRData;
+            break;
+            case "sample":
+                allSOTR = allSOTRData.Where(x => x.SampleType == "sample").ToList();
+            break;
+            case "cpt":
+                allSOTR = allSOTRData.Where(x => x.SampleType == "cpt").ToList();
+            break;
+            default:
+                allSOTR = allSOTRData;
+            break;
+        }
+        Console.WriteLine("toggling test");
+    }
     private void GetAllSOTR()
     {
         if(state.Project.Value.Id != "")
@@ -161,6 +195,7 @@
                 }
             }
             allSOTR = allSOTR.OrderBy(x => x.Date).ToList();
+            allSOTRData = allSOTR;
             if(allSOTR.Count == 0)
             {
                 MsgBoxHelper("No test result recorded! click Ok to add a new test","warn","","ToggleSampleDialog",true);
