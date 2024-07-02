@@ -119,9 +119,8 @@
     {
         /*
             study and work on drifts and zeros
+            enable subsample Id csv in Add sample now that I have set the BH logs
             create boring logs and plot torvane (undrained shear strength (su)), pp and UU
-            confirm formula binding relationship of yd, yw and nmc in excel
-            compare with new data
         */
         /*
          Now that I am working with samples, modify processed such that
@@ -382,7 +381,7 @@
                         double Qt = qnet / effectiveOverburden;
                         double rf = (row[2] / qt) * 100;
                         double bq = (row[3] - u0) / qnet;//find out u0
-                        /*if(rf > 50)
+                        /*if(rf > 10)
                         {
                              Console.WriteLine($"at {row[0]}m, {row[2]} / {qt} = {(row[2] / qt)} and {rf}%");
                         }*/
@@ -842,7 +841,6 @@
             {
                 strokeInfo.Add(depth);
             }
-           // Console.WriteLine($"geeting and setting stroke info {strokeInfo.Count} {dataArray.Count} {lastData.Length}");
         }
     }
     private void MutateStrokeInfo()

@@ -31,6 +31,31 @@ static class ChartInitializer
 
         return new (plotModel,series,XAxis,YAxis);
     }
+
+        public static Tuple<PlotModel,ScatterSeries,LinearAxis,LinearAxis> InitScatter
+    (string plotModelTitle, int xStartPosition, int xEndPosition,int yStartPosition, int yEndPosition, string xTitle, string yTitle,double strokeThickness, AxisPosition xPosition, AxisPosition yPosition, OxyColor color)
+    {
+        var plotModel = new PlotModel {  Title = plotModelTitle};
+
+        var series = new ScatterSeries
+        {
+            Title = xTitle,
+            MarkerType = MarkerType.Circle,
+            MarkerSize = 1,
+            MarkerStroke = color,
+            MarkerFill = color,
+        };
+        plotModel.Series.Add(series);
+
+        var XAxis = new LinearAxis(){Position = xPosition, StartPosition = xStartPosition, EndPosition = xEndPosition,IsZoomEnabled = false, IsPanEnabled = false,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = xTitle};
+        plotModel.Axes.Add(XAxis);
+
+        var YAxis = new LinearAxis(){Position = yPosition, StartPosition = yStartPosition, EndPosition = yEndPosition,IsZoomEnabled = false, IsPanEnabled = false,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = yTitle};
+        plotModel.Axes.Add(YAxis);
+
+        return new (plotModel,series,XAxis,YAxis);
+    }
+
         public static Tuple<PlotModel,LineSeries,LogarithmicAxis,LogarithmicAxis> InitLog 
     (string plotModelTitle, int xStartPosition, int xEndPosition,int yStartPosition, int yEndPosition, string xTitle, string yTitle,double strokeThickness, AxisPosition xPosition, AxisPosition yPosition, OxyColor color)
     {
@@ -72,5 +97,17 @@ static class ChartInitializer
         };
         plotModel.Series.Add(series);
         return (plotModel,series, XAxis,YAxis);
+    }
+    public static LineSeries CreateNewLineSeries(OxyColor color, int strokeThickness)
+    {
+        var series = new LineSeries
+        {
+            //Title = xTitle,
+            MarkerType = MarkerType.Circle,
+            MarkerSize = 1,
+            Color = color,
+            StrokeThickness = strokeThickness
+        };
+        return series;
     }
 }

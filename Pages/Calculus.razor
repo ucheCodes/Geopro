@@ -24,7 +24,7 @@
             <div class="table-body">
                 <table>
                     <thead>
-                        @if(Headers.Count() > 0)
+                        @if(Headers.Count() > 0 && Headers.ContainsKey(selectcalc))
                         {
                             <tr>
                             @foreach(var header in Headers[selectcalc])

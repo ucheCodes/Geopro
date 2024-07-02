@@ -9,6 +9,7 @@ public class CustomRectangleAnnotation : RectangleAnnotation
 {
     public HatchStyle HatchStyle { get; set; }
     public OxyColor HatchColor { get; set; } = OxyColors.Black;
+    //public string Text {get;set;} = "";
 
     public override void Render(IRenderContext rc)
     {
@@ -118,6 +119,20 @@ public class CustomRectangleAnnotation : RectangleAnnotation
                 rc.DrawEllipse(dotRect, HatchColor, OxyColors.Transparent, 1, EdgeRenderingMode.PreferSharpness);
             }
         }
+        if(Text != "")
+        {
+            DrawText(rc, Text, 0);
+        }
+    }
+    private void DrawText(IRenderContext rc, string text, double rotationAngle)
+    {
+        var midX = (MinimumX + MaximumX) / 2;
+        var midY = (MinimumY + MaximumY) / 2;
+        var textPosition = Transform(new DataPoint(midX, midY));
+
+        var fontSize = 25;//this.FontSize > 0 ? this.FontSize : 16;
+        OxyColor TextColor = OxyColors.Red;
+        rc.DrawText(textPosition, text, TextColor, "", fontSize, 800, rotationAngle, HorizontalAlignment.Center, VerticalAlignment.Middle);
     }
 
     private void DrawDashesHatch0(IRenderContext rc, OxyRect rect)
@@ -145,6 +160,10 @@ public class CustomRectangleAnnotation : RectangleAnnotation
                     new ScreenPoint(dashEnd, y)
                 }, HatchColor, 1, EdgeRenderingMode.PreferSharpness);
             }
+        }
+        if(Text != "")
+        {
+            DrawText(rc, Text, 0);
         }
     }
 

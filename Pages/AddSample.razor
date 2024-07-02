@@ -1,4 +1,5 @@
 ﻿    @inject DatabaseService database
+    @inject INPOIExcelReader NPOIExcelReader
     @inject IJSRuntime jSRuntime
     @inject IStore store
     @inject State state
@@ -11,9 +12,9 @@
             <h3>@Title</h3>
         </div>
         <span class="@msgClass">@sotrMsg</span>
-        <div class="input-group">
+        @*<div class="input-group">
             <p class="p">@state.Project.Value.Info.TestNumber     E: @state.Project.Value.Info.Easting m / N: @state.Project.Value.Info.Northing m</p>
-        </div>
+        </div>*@
         <div class="input-group">
             <select @bind="testType">
                 <option value="">Select Test Type</option>
@@ -29,8 +30,7 @@
                     <option value="log">Add Boring Log</option>
                     <option value="uw">Unit Weight</option>
                     <option value="nmc">Natural Moisture Content (%)</option>
-                    <option value="torvane">Torvane Test</option>
-                    <option value= "pp">Pocket Penetrometer</option>
+                    <option value="su">su Test (mv,pp,tv,uu,uuR)</option>
                 </select>
             </div>
             <div class="input-group">
@@ -66,6 +66,9 @@
         {
             <div class="input-group">
                 <input @bind="subSampleCsv" type="text" placeholder="sub sampling in meters e.g 0.2,0.4,0.6" name="input1">
+            </div>
+            <div class="input-group">
+                <input @bind="subSampleIdCsv" type="text" placeholder="sub sampling Id e.g 2BagA, 3WaxC" name="input1">
             </div>
             <div class="input-group">
                 Select Sample Photo:
@@ -269,6 +272,17 @@
                 </div>
             }
         }
+        else if(selectCalc == "su")
+        {
+            <div class="input-group">
+                <p><b>Undrained Shear Strength, Su (kPa)</b>
+                  <i>kindly structure and select an excel spreadsheet with your su parameters in kPa</i><br>
+                  <i>The first row will be treated as header Identifier</i><br>
+                  <i>The first column will be treated as depth in meters</i><br>
+            </p>
+            <InputFile OnChange="@GetSuParameters" accept=".csv,.xls,.xlsx"/>
+            </div> 
+        }
         <span class="@msgClass">@calcMsg</span>
         <button @onclick="SubmitCalculus" class="btn">Compute</button>
         </div>
@@ -392,20 +406,20 @@
                     Calculus = sotr.Calculus,
                     BoreholeLogList = sotr.BoreholeLogList
                 };
-                UpdateSOTR(_sotr);
+               UpdateSOTR(_sotr);
             }
             else
             {
                 sotrMsg = "start & end depth must be valid numbers, start depth must be less than end depth";
                 msgClass = "red";
-                Console.WriteLine(sotrMsg);
+                //Console.WriteLine(sotrMsg);
             }
         }
         else
         {
             msgClass = "red";
             sotrMsg = "Kindly fill test Id, select sampling tool and other required fields! ";
-            Console.WriteLine(sotrMsg);
+            //Console.WriteLine(sotrMsg);
         }
         msg = "";
         msgClass = "";
@@ -813,6 +827,29 @@
         else{
             selectedBoreholeLog = ("","",0,0);
             ClearBHLogParams();
+        }
+    }
+    private async Task ReadExcelData(IBrowserFile file)
+    {
+        try
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.OpenReadStream().CopyToAsync(memoryStream);
+                //memoryStream.Position = 0; 
+                //var excelDataColumnDict = NPOIExcelReader.ReadExcelDataAsColumns(memoryStream, file.Name,0);
+            }
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }
+    private async void GetSuParameters(InputFileChangeEventArgs e)
+    {
+        if(e.File.Name != "")
+        {
+            await ReadExcelData(e.File);
         }
     }
     private void ClearAll()

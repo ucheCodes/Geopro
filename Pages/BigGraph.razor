@@ -2,6 +2,7 @@
 @inject IJSRuntime jSRuntime
 @inject IStore store
 @inject State state
+@inject IFunctions function
 
 
 <InputFile type="file" id="image" style="display: none;" OnChange="@LoadFile" accept=".png,.jpg,.jpeg" />
@@ -51,8 +52,8 @@
         <BlazorPlotView Model="@qtModel" Width="240" Height="650" />
         @* <BlazorPlotView Model="@qnetModel" Width="200" Height="650" /> *@
         <BlazorPlotView Model="@sleeveModel" Width="240" Height="650" />
-        <BlazorPlotView Model="@rfModel" Width="240" Height="650" />
         <BlazorPlotView Model="@poreModel" Width="240" Height="650" />
+        <BlazorPlotView Model="@rfModel" Width="240" Height="650" />
     }
     else if(isRender && state.Data2Show.Value != "")
     {
@@ -93,10 +94,10 @@
     public PlotModel coneRootDecayModel = new PlotModel(); 
     LinearAxis coneXAxis = new LinearAxis();
     LinearAxis coneYAxis = new LinearAxis();
-    LineSeries coneSeries = new LineSeries();
+    ScatterSeries coneSeries = new ScatterSeries();
     LinearAxis sleeveXAxis = new LinearAxis();
     LinearAxis sleeveYAxis = new LinearAxis();
-    LineSeries sleeveSeries = new LineSeries();
+    ScatterSeries sleeveSeries = new ScatterSeries();
     LinearAxis poreXAxis = new LinearAxis();
     LinearAxis poreYAxis = new LinearAxis();
     LineSeries poreSeries = new LineSeries();
@@ -109,7 +110,7 @@
     LineSeries poreRootSeries = new LineSeries();
     LineSeries coneLogSeries = new LineSeries();
     LineSeries coneRootSeries = new LineSeries();
-    LineSeries qtSeries = new LineSeries();
+    ScatterSeries qtSeries = new ScatterSeries();
     LineSeries qnetSeries = new LineSeries();
 
 
@@ -167,13 +168,13 @@
                             if(index == 1)
                             {
                                 qc = x;
-                                coneSeries.Points.Add(new DataPoint(x,y));
+                                coneSeries.Points.Add(new ScatterPoint(x,y));
                             }
                             else if(index == 2)
                             {
                                 fs = x;
                                 double rf = fs/qc;
-                                sleeveSeries.Points.Add(new DataPoint(x,y));
+                                sleeveSeries.Points.Add(new ScatterPoint(x,y));
                                 rfSeries.Points.Add(new DataPoint(rf,y));
                             }
                             else if(index == 3)
@@ -241,8 +242,8 @@
             for(int i = 0; i < coneR.Count; i++)
             {
                 double rf = sf[i] / coneR[i];
-                coneSeries.Points.Add(new DataPoint(coneR[i],depth[i]));
-                sleeveSeries.Points.Add(new DataPoint(sf[i],depth[i]));
+                coneSeries.Points.Add(new ScatterPoint(coneR[i],depth[i]));
+                sleeveSeries.Points.Add(new ScatterPoint(sf[i],depth[i]));
                 poreSeries.Points.Add(new DataPoint(pp[i],depth[i]));
                 rfSeries.Points.Add(new DataPoint(rf,depth[i]));
             }
@@ -265,22 +266,25 @@
             List<double> rf = computedCol[13]; 
             List<double> bq = computedCol[14]; 
 
-            poreXAxis.Minimum = RoundNumber(u2.Min());
-            poreXAxis.Maximum = RoundNumber(u2.Max());
-            rfXAxis.Minimum = RoundNumber(rf.Min());
-            rfXAxis.Maximum = RoundNumber(rf.Max());
+            poreXAxis.Minimum = function.RoundNumber(u2.Min());
+            poreXAxis.Maximum = function.RoundNumber(u2.Max());
+            //rfXAxis.Minimum = function.RoundNumber(rf.Min());
+            //rfXAxis.Maximum = function.RoundNumber(rf.Max());
 
             //Console.WriteLine($"{rfXAxis.Minimum} - {rfXAxis.Maximum }");
 
             depth = depth.Where(d => d > 0).ToList<double>();
             for(int i = 0; i < depth.Count; i++)
             {
-                coneSeries.Points.Add(new DataPoint(qc[i],depth[i]));
-                qtSeries.Points.Add(new DataPoint(qt[i],depth[i]));
+                coneSeries.Points.Add(new ScatterPoint(qc[i],depth[i]));
+                qtSeries.Points.Add(new ScatterPoint(qt[i],depth[i]));
                 qnetSeries.Points.Add(new DataPoint(qnet[i],depth[i]));
-                sleeveSeries.Points.Add(new DataPoint(fs[i],depth[i]));
-                rfSeries.Points.Add(new DataPoint(rf[i],depth[i]));
+                sleeveSeries.Points.Add(new ScatterPoint(fs[i],depth[i]));
                 poreSeries.Points.Add(new DataPoint(u2[i],depth[i]));
+                if(rf[i] > -5 && rf[i] < 8)
+                {
+                    rfSeries.Points.Add(new DataPoint(rf[i],depth[i]));
+                }
             }
             PlotStrokeInfo();
         }
@@ -314,13 +318,13 @@
     {
         if(state.Data2Show.Value == "processed")
         {
-            var cm = ChartInitializer.InitLinear("qc (MPa)",0,1,1,0,"qc (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
+            var cm = ChartInitializer.InitScatter("qc (MPa)",0,1,1,0,"qc (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
             coneModel = cm.Item1; coneSeries = cm.Item2;
-            var qtm = ChartInitializer.InitLinear("qt (MPa)",0,1,1,0,"qt (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
+            var qtm = ChartInitializer.InitScatter("qt (MPa)",0,1,1,0,"qt (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
             qtModel = qtm.Item1; qtSeries = qtm.Item2;
             var qnm = ChartInitializer.InitLinear("qnet (MPa)",0,1,1,0,"qnet (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGoldenrod);
             qnetModel = qnm.Item1; qnetSeries = qnm.Item2;
-            var sm = ChartInitializer.InitLinear("Fs (MPa)",0,1,1,0,"Fs (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.Orange);
+            var sm = ChartInitializer.InitScatter("Fs (MPa)",0,1,1,0,"Fs (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.Orange);
             sleeveModel = sm.Item1; sleeveSeries = sm.Item2;
             var pm = ChartInitializer.InitLinear("u2 (MPa)",0,1,1,0,"u2 (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
             poreModel = pm.Item1; poreSeries = pm.Item2; poreXAxis = pm.Item3; poreYAxis = pm.Item4;
@@ -329,9 +333,9 @@
         }
         else
         {
-            var cm = ChartInitializer.InitLinear("Tip Resistance,MPa",0,1,1,0,"qc (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
+            var cm = ChartInitializer.InitScatter("Tip Resistance,MPa",0,1,1,0,"qc (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkRed);
             coneModel = cm.Item1; coneSeries = cm.Item2;
-            var sm = ChartInitializer.InitLinear("Sleeve Friction,MPa",0,1,1,0,"Fs (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
+            var sm = ChartInitializer.InitScatter("Sleeve Friction,MPa",0,1,1,0,"Fs (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.Blue);
             sleeveModel = sm.Item1; sleeveSeries = sm.Item2;
             var pm = ChartInitializer.InitLinear("Pore Pressure,MPa",0,1,1,0,"u2 (MPa)","Penetration (m)",0.8, AxisPosition.Top,AxisPosition.Left,OxyColors.DarkGreen);
             poreModel = pm.Item1; poreSeries = pm.Item2;
@@ -354,7 +358,7 @@
             StrokeThickness = 2
         };
     }
-    private void InitializePlotModelsOld()
+    /*private void InitializePlotModelsOld()
     {
        coneModel = new PlotModel {  Title = "Tip Resistance,MPa"};
        sleeveModel = new PlotModel { Title = "Sleeve Friction,MPa"};
@@ -365,7 +369,7 @@
        coneModel.Axes.Add(coneXAxis);
        var coneYAxis = new LinearAxis(){Position = AxisPosition.Left, StartPosition = 1, EndPosition = 0,  MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot, Title = "Depth (m)"};
        coneModel.Axes.Add(coneYAxis);
-       coneSeries = new LineSeries
+       coneSeries = new ScatterSeries
         {
             Title = "cone",
             MarkerType = MarkerType.Circle,
@@ -430,7 +434,7 @@
             MarkerSize = 1,
             StrokeThickness = 2
         };
-    }
+    }*/
     private async void ChangeImage(int id)
     {
         imgId = id; msg = ""; msgClass = "";
@@ -466,36 +470,6 @@
         {
             msg = er.Message.ToString();
             msgClass = "red";
-        }
-    }
-    private double RoundNumber(double value)
-    {
-        if (value > 10.0)
-        {
-            return Math.Ceiling(value);
-        }
-        else if (value < -10.0)
-        {
-            return Math.Floor(value);
-        }
-        else if (value > 0 && value < 0.1)
-        {
-            return 0.1;
-        }
-        else if (value < 0 && value > -0.1)
-        {
-            return -0.1;
-        }
-        else
-        {
-            if (value > 0)
-            {
-                return Math.Ceiling(value * 10) / 10.0;
-            }
-            else
-            {
-                return Math.Floor(value * 10) / 10.0;
-            }
         }
     }
 }

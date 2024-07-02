@@ -43,10 +43,41 @@ class Functions : IFunctions
         double effectiveOverburden = overburdenOfSoilLayers / 1000;//from KN/m2 to MPa   
         return new (effectiveOverburden, totalOverburden);
     }
+    public double RoundNumber(double value)
+    {
+        if (value > 10.0)
+        {
+            return Math.Ceiling(value);
+        }
+        else if (value < -10.0)
+        {
+            return Math.Floor(value);
+        }
+        else if (value > 0 && value < 0.1)
+        {
+            return 0.1;
+        }
+        else if (value < 0 && value > -0.1)
+        {
+            return -0.1;
+        }
+        else
+        {
+            if (value > 0)
+            {
+                return Math.Ceiling(value * 10) / 10.0;
+            }
+            else
+            {
+                return Math.Floor(value * 10) / 10.0;
+            }
+        }
+    }
 }
 interface IFunctions
 {
     bool SaveProject(Project project);
     Tuple<double,double> ComputeOverburdenPressure(double bulkDensityInKNperM3, double depth);
     Dictionary<string,string> GetSamplingTool();
+    double RoundNumber(double value);
 }

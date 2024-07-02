@@ -8,11 +8,11 @@ using Microsoft.AspNetCore.HttpLogging;
 
 public class PlotModelService
 {
-    public (PlotModel Legend,PlotModel Borehole) GenerateBoreholeLogs(List<SampleInfo> sample, double yMax)
+    public (PlotModel Legend,PlotModel Borehole) GenerateBoreholeLogs(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel();//TitlePosition = 0.5,AxisTitleDistance = 10
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 2,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata",TitleFontWeight = FontWeights.Bold});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = 0,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
         PlotStratigraphy(plotModel, sample,yMax);
         var legendModel = PlotLegends();
         return (legendModel,plotModel);
@@ -61,7 +61,7 @@ public class PlotModelService
     }
     private void AddLegendText(PlotModel plotModel,OxyColor color, HatchStyle hatchStyle, string text, double minX,double maxX,double minY, double maxY)
     {
-        plotModel.Annotations.Add(CreateRectangle(minX, maxX, minY, maxY, color, hatchStyle));
+        plotModel.Annotations.Add(CreateRectangle("",minX, maxX, minY, maxY, color, hatchStyle));
         var textAnnotation = new TextAnnotation
         {
             Text = text,
@@ -73,13 +73,13 @@ public class PlotModelService
             TextColor = OxyColors.Black,
             Stroke = OxyColors.Transparent
         };
-        plotModel.Annotations.Add(textAnnotation);
+       // plotModel.Annotations.Add(textAnnotation);
     }
-    public PlotModel PlotStrata(List<SampleInfo> sample, double yMax)
+    public PlotModel PlotStrata(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel();
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 2,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata",TitleFontWeight = FontWeights.Bold});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = 0,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
         (HatchStyle hatchStyle, OxyColor color,string strata) legend = new (HatchStyle.None,OxyColors.Transparent,"");
         double x0 = 0; double x1 = 2;
         foreach (var data in sample)
@@ -89,8 +89,9 @@ public class PlotModelService
                 foreach(var log in data.BoreholeLogList)
                 {
                     legend = GetLegend(log.strata);
-                    //plotModel.Annotations.Add(CreateRectangle(x0, x1, log.startDepth, log.endDepth, legend.color, legend.hatchStyle));
-                    AddLegendText(plotModel,legend.color, legend.hatchStyle, log.strata, x0,x1,log.startDepth, log.endDepth);
+                   // plotModel.Annotations.Add(CreateRectangle(log.strata, minX, maxX, minY, maxY, color, legend.hatchStyle));
+                    plotModel.Annotations.Add(CreateRectangle(log.strata, x0, x1, log.startDepth, log.endDepth, legend.color, legend.hatchStyle));
+                   // AddLegendText(plotModel,legend.color, legend.hatchStyle, log.strata, x0,x1,log.startDepth, log.endDepth);
                 }
             }
         }
@@ -108,24 +109,24 @@ public class PlotModelService
             if (gap >= 1)//indicates CPT stroke
             {
                 legend = GetLegend("cpt");
-                plotModel.Annotations.Add(CreateRectangle(x0, x1, previousEndDepth, data.BoreholeStartDepth, legend.color, legend.hatchStyle));
+                plotModel.Annotations.Add(CreateRectangle("",x0, x1, previousEndDepth, data.BoreholeStartDepth, legend.color, legend.hatchStyle));
             }
             legend = GetLegend(data.SampleType);
             previousStartDepth = data.BoreholeStartDepth; previousEndDepth = data.BoreholeEndDepth;
-            plotModel.Annotations.Add(CreateRectangle(x0, x1, data.BoreholeStartDepth, data.BoreholeEndDepth, legend.color, legend.hatchStyle));
+            plotModel.Annotations.Add(CreateRectangle("",x0, x1, data.BoreholeStartDepth, data.BoreholeEndDepth, legend.color, legend.hatchStyle));
         }
         //This will plot if the composite borehole ends with CPT
         if (maxDepth > maxBoreholeDepth)
         {
             legend = GetLegend("cpt");
-            plotModel.Annotations.Add(CreateRectangle(x0, x1, maxBoreholeDepth, maxDepth, legend.color, legend.hatchStyle));
+            plotModel.Annotations.Add(CreateRectangle("",x0, x1, maxBoreholeDepth, maxDepth, legend.color, legend.hatchStyle));
         }
     }
-    public PlotModel PlotUnitWeight(List<SampleInfo> sample, double yMax)
+    public PlotModel PlotUnitWeight(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel ();
         plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Unit Weight (kN/m3)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         var legend = new Legend
         {
             LegendTitle = "Legend",
@@ -178,11 +179,11 @@ public class PlotModelService
         plotModel.Series.Add(subSeries);
         return plotModel;  
     }
-    public PlotModel PlotWaterContent(List<SampleInfo> sample, double yMax)
+    public PlotModel PlotWaterContent(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel ();
         plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content (%)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         var wcSeries = new ScatterSeries
         {
             MarkerType = MarkerType.Square,
@@ -201,7 +202,7 @@ public class PlotModelService
         plotModel.Series.Add(wcSeries);
         return plotModel;  
     }
-    public PlotModel PlotConeResistance(List<double> depth,List<double> qc, List<double> qt, List<double> qnet, double yMax)
+    public PlotModel PlotConeResistance(List<double> depth,List<double> qc, List<double> qt, List<double> qnet, double yMin, double yMax)
     {
         var plotModel = new PlotModel ();
         double xmax = new List<List<double>> {qc,qt,qnet}
@@ -210,7 +211,7 @@ public class PlotModelService
         double xMax = Math.Round(xmax,1);
        /* double yMax = depth.Max();*/
         plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         var legend = new Legend
         {
@@ -260,12 +261,19 @@ public class PlotModelService
         plotModel.Series.Add(qnetSeries);
         return plotModel;  
     }
-    public PlotModel PlotPorePressure(List<double> depth,List<double> u2, double yMax)
+    public void PlotShearStress(Dictionary<string,List<double>> suList, double yMin, double yMax)
+    {
+        var plotModel = new PlotModel() { };
+        //double xMin = Math.Round(u2.Min(),1); double xMax =Math.Round(u2.Max(),1);
+       // plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        //plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+    }
+    public PlotModel PlotPorePressure(List<double> depth,List<double> u2, double yMin, double yMax)
     {
         var plotModel = new PlotModel() { };
         double xMin = Math.Round(u2.Min(),1); double xMax =Math.Round(u2.Max(),1);
         plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         var u2Series = new LineSeries
         {
@@ -285,29 +293,7 @@ public class PlotModelService
 
 
     //Testing
-    public PlotModel CreatePlotModel()
-    {
-        var plotModel = new PlotModel {Title = "Borehole Logs"};
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 10, Title="Soil Stratigraphy",MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0, Minimum = 0, Maximum = 15,Title="Penetration (m)",MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
-
-        plotModel.Annotations.Add(CreateRectangle(1, 2, 0, 2.5, OxyColors.Red, HatchStyle.Cross));
-        plotModel.Annotations.Add(CreateRectangle(1, 2, 2.5, 5, OxyColors.Green, HatchStyle.BackwardDiagonal));
-        plotModel.Annotations.Add(CreateRectangle(1, 2, 5, 7.5, OxyColors.Blue, HatchStyle.ForwardDiagonal));
-        plotModel.Annotations.Add(CreateRectangle(1, 2, 7.5, 10, OxyColors.Brown, HatchStyle.Horizontal));
-        plotModel.Annotations.Add(CreateMixedHatch(1, 2, 10, 14,OxyColors.HotPink));
-
-        plotModel.Annotations.Add(CreateRectangle(4, 5, 0, 2.5, OxyColors.Red, HatchStyle.Cross));
-        plotModel.Annotations.Add(CreateRectangle(4, 5, 2.5, 5, OxyColors.Green, HatchStyle.Dots));
-        plotModel.Annotations.Add(CreateRectangle(4, 5, 5, 7.5, OxyColors.Blue, HatchStyle.Dashes));
-        plotModel.Annotations.Add(CreateRectangle(4, 5, 7.5, 10, OxyColors.Yellow, HatchStyle.Plus));
-        plotModel.Annotations.Add(CreateRectangle(4, 5, 10, 14, OxyColors.Brown, HatchStyle.SquareX));
-        //plotModel.Annotations.Add(CreateDiagonalSquare(4, 5, 10, 14,OxyColors.Gold));
-
-        return plotModel;
-    }
-
-    public PlotModel CreateRectangleWithText(double minX, double maxX, double minY, double maxY)
+    public PlotModel CreateRectangleWithText2(double minX, double maxX, double minY, double maxY)
     {
         var plotModel = new PlotModel { Title = "Rectangles with Hatches" };
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 10 });
@@ -335,7 +321,7 @@ public class PlotModelService
         };
 
         plotModel.Annotations.Add(textAnnotation);
-        plotModel.Annotations.Add(CreateRectangle(minX, maxX, minY, maxY, OxyColors.Transparent, HatchStyle.None));
+        plotModel.Annotations.Add(CreateRectangle("",minX, maxX, minY, maxY, OxyColors.Transparent, HatchStyle.None));
 
         return plotModel;
     }
@@ -344,7 +330,7 @@ public class PlotModelService
     {
         return text.Length * fontSize * 0.6;
     }
-    private CustomRectangleAnnotation CreateRectangle(double x0, double x1, double y0, double y1, OxyColor fillColor, HatchStyle hatchStyle)
+    private CustomRectangleAnnotation CreateRectangle(string text, double x0, double x1, double y0, double y1, OxyColor fillColor, HatchStyle hatchStyle)
     {
         return new CustomRectangleAnnotation
         {
@@ -352,6 +338,7 @@ public class PlotModelService
             MaximumX = x1,
             MinimumY = y0,
             MaximumY = y1,
+            Text = text,
             Fill = fillColor,
             Stroke = OxyColors.Black,
             StrokeThickness = 1,
@@ -382,12 +369,12 @@ public class PlotModelService
             HatchColor = OxyColors.Black
         };
     }
-    /*
+        /*
                 double xMax = new List<List<double>> { u2,bq}
                      .SelectMany(x => x)
                      .Max();
         double xMin = new List<List<double>> { u2,bq}
                      .SelectMany(x => x)
                      .Min();
-    */
+        */
 }
