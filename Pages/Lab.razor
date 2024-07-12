@@ -23,6 +23,7 @@
                 <option value="sample">Sample</option>
                 <option value="cpt">CPT</option>
                 <option value="composite">Composite</option>
+                <option value="depth">Depth</option>
             </select>
         </div>
         <div class="table large">
@@ -174,6 +175,9 @@
             break;
             case "cpt":
                 allSOTR = allSOTRData.Where(x => x.SampleType == "cpt").ToList();
+            break;
+            case "depth":
+                allSOTR = allSOTRData.OrderBy(x => x.BoreholeEndDepth).ToList();
             break;
             default:
                 allSOTR = allSOTRData;

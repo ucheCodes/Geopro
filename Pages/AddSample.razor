@@ -256,6 +256,7 @@
                     <option value="">Select Strata</option>
                     <option value="sand">Sand</option>
                     <option value="clay">Clay</option>
+                    <option value="N/R">No Recovery</option>
                 </select>
             </div>
             <div class="input-group">
@@ -274,6 +275,7 @@
         }
         else if(selectCalc == "su")
         {
+            <span class="@msgClass">@msg</span>
             <div class="input-group">
                 <p><b>Undrained Shear Strength, Su (kPa)</b>
                   <i>kindly structure and select an excel spreadsheet with your su parameters in kPa</i><br>
@@ -284,7 +286,10 @@
             </div> 
         }
         <span class="@msgClass">@calcMsg</span>
-        <button @onclick="SubmitCalculus" class="btn">Compute</button>
+        @if(selectCalc != "su")
+        {
+            <button @onclick="SubmitCalculus" class="btn">Compute</button>
+        }
         </div>
     </div>
     }
@@ -836,8 +841,23 @@
             using (var memoryStream = new MemoryStream())
             {
                 await file.OpenReadStream().CopyToAsync(memoryStream);
-                //memoryStream.Position = 0; 
-                //var excelDataColumnDict = NPOIExcelReader.ReadExcelDataAsColumns(memoryStream, file.Name,0);
+                memoryStream.Position = 0; //Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream, string fileName)
+                var excelDataColumnDict = NPOIExcelReader.ReadExcelDataAsColumns(memoryStream, file.Name,0);
+                if(excelDataColumnDict.Count() > 0 && SOTR.ProjectId != "")
+                {
+                    var SuParameters = excelDataColumnDict;
+                    //Add to db as an independent data with project Id as it's common key
+                    string key = JsonConvert.SerializeObject(SOTR.ProjectId);
+                    string value = JsonConvert.SerializeObject(SuParameters);
+                    database.Create("SuParameters",key,value);
+                    msg = "data uploaded successfully";
+                    msgClass = "green";
+                }
+                else
+                {
+                    msg = "data failed to upload!!! Try again with a valid and non empty *.xls file in sheet1";
+                    msgClass = "red";
+                }
             }
         }
         catch(Exception e)

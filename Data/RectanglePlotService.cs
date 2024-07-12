@@ -54,9 +54,9 @@ class RectanglePlotService //: IRectanglePlotService
                     {
                         double endDepth = 0;
                         string text = "No Id";
-                        if(arrayId.Length >= i && !string.IsNullOrEmpty(arrayId[i]))
+                        if(arrayId.Length > (i-1) && !string.IsNullOrEmpty(arrayId[i-1]))
                         {
-                            text = arrayId[i];
+                            text = arrayId[i-1];
                         }
                         if(double.TryParse(array[i], out endDepth))
                         {
@@ -67,7 +67,10 @@ class RectanglePlotService //: IRectanglePlotService
                 }
         }
         }
-        catch{}
+        catch(Exception e)
+        {
+            Console.WriteLine($"form rectangle plot service draw sub sample : {e.Message}");
+        }
     }
     public void DrawRectangleArrowHeadAndText(PlotModel plotModel,double x0, double x1, double y0, double y1, OxyColor fillColor, OxyColor lineColor,OxyColor textColor, string text)
     {

@@ -9,7 +9,7 @@ public class CustomRectangleAnnotation : RectangleAnnotation
 {
     public HatchStyle HatchStyle { get; set; }
     public OxyColor HatchColor { get; set; } = OxyColors.Black;
-    //public string Text {get;set;} = "";
+    //public int FontSize {get;set;} = 14;
 
     public override void Render(IRenderContext rc)
     {

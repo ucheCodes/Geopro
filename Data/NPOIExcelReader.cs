@@ -9,6 +9,7 @@ interface INPOIExcelReader
 {
     List<string[]> ReadExcelData(Stream fileStream, string fileName);
     Dictionary<string, List<double>> ReadAndParseExcelData(Stream fileStream, string fileName, int sheetIndex);
+    Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream, string fileName, int sheetIndex);
 }
 public class NPOIExcelReader : INPOIExcelReader
 {
@@ -129,15 +130,7 @@ public Dictionary<string, List<double>> ReadAndParseExcelData(Stream fileStream,
     return columnsData;
 }
 
-/*
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
-using NPOI.HSSF.UserModel;
-using System;
-using System.Collections.Generic;
-using System.IO;
-
-public Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream, string fileName)
+public Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream, string fileName, int sheetIndex)
 {
     Dictionary<string, List<double>> columnsData = new Dictionary<string, List<double>>();
     IWorkbook? workbook = null;
@@ -158,7 +151,7 @@ public Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream
 
     if (workbook != null)
     {
-        ISheet sheet = workbook.GetSheetAt(0); // Assuming we are reading the first sheet
+        ISheet sheet = workbook.GetSheetAt(sheetIndex);
         if (sheet.PhysicalNumberOfRows > 0)
         {
             // Read headers and initialize dictionary
@@ -168,9 +161,9 @@ public Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream
             for (int col = 0; col < numberOfColumns; col++)
             {
                 ICell headerCell = headerRow.GetCell(col);
-                if (headerCell != null)
+                if (headerCell != null && headerCell.ToString() != "")
                 {
-                    string header = headerCell.ToString();
+                    string? header = headerCell.ToString() ?? "";
                     if (!columnsData.ContainsKey(header))
                     {
                         columnsData[header] = new List<double>();
@@ -182,13 +175,12 @@ public Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream
             for (int col = 0; col < numberOfColumns; col++)
             {
                 ICell headerCell = headerRow.GetCell(col);
-                if (headerCell != null)
+                if (headerCell != null && headerCell.ToString() != "")
                 {
-                    string header = headerCell.ToString();
+                    string? header = headerCell.ToString() ?? "";
 
                     // Get column data
                     List<double> columnData = GetColumnData(sheet, col);
-
                     columnsData[header].AddRange(columnData);
                 }
             }
@@ -217,7 +209,4 @@ private List<double> GetColumnData(ISheet sheet, int colIndex)
 
     return columnData;
 }
-
-
-*/
 }

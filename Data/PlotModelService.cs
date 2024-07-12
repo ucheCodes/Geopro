@@ -21,7 +21,7 @@ public class PlotModelService
     {
         Dictionary<string,(HatchStyle hatchStyle, OxyColor color,string strata)> legend = new Dictionary<string, (HatchStyle hatchStyle, OxyColor color, string strata)>()
         {
-            {"cpt", new (HatchStyle.Horizontal,OxyColors.Red,"CPT")},
+            {"N/R", new (HatchStyle.Horizontal,OxyColors.Yellow,"N/R")},//no recovery
             {"sand", new (HatchStyle.Dots,OxyColors.Transparent,"Sand")},
             {"clay", new (HatchStyle.Dashes,OxyColors.Transparent,"Clay")},
             {"clayey sand", new (HatchStyle.Dots,OxyColors.RoyalBlue,"Clayey Sand")},
@@ -182,7 +182,7 @@ public class PlotModelService
     public PlotModel PlotWaterContent(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel ();
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content (%)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = 100, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content,%", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
         plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         var wcSeries = new ScatterSeries
         {
@@ -205,13 +205,11 @@ public class PlotModelService
     public PlotModel PlotConeResistance(List<double> depth,List<double> qc, List<double> qt, List<double> qnet, double yMin, double yMax)
     {
         var plotModel = new PlotModel ();
-        double xmax = new List<List<double>> {qc,qt,qnet}
+        double xMax = 0;
+       /* double xmax = new List<List<double>> {qc,}//,qnet}
                      .SelectMany(x => x)
                      .Max();
-        double xMax = Math.Round(xmax,1);
-       /* double yMax = depth.Max();*/
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        double xMax = Math.Round(xmax,1);*/
 
         var legend = new Legend
         {
@@ -231,62 +229,149 @@ public class PlotModelService
         var qcSeries = new ScatterSeries
         {
             MarkerType = MarkerType.Circle,
-            MarkerSize = 1.2,
-            MarkerFill = OxyColors.Red,
+            MarkerSize = 0.7,
+            MarkerStroke = OxyColors.Blue,
+            MarkerFill = OxyColors.Blue,
             Title = "qc"
         };
         var qnetSeries = new ScatterSeries
         {
             MarkerType = MarkerType.Circle,
-            MarkerSize = 1,
+            MarkerSize = 0.5,
             MarkerFill = OxyColors.Yellow,
             Title = "qnet"
         };
         var qtSeries = new ScatterSeries
         {
             MarkerType = MarkerType.Square,
-            MarkerSize = 1,
-            MarkerStroke = OxyColors.Blue,
-            MarkerFill = OxyColors.Blue,
+            MarkerSize = 0.4,
+            MarkerStroke = OxyColors.Red,
+            MarkerFill = OxyColors.Red,
             Title = "qt"
         };
         for (int i = 0; i < qt.Count; i++)
         {
-            qcSeries.Points.Add(new ScatterPoint(qc[i],depth[i]));
             qtSeries.Points.Add(new ScatterPoint(qt[i],depth[i]));
+            qcSeries.Points.Add(new ScatterPoint(qc[i],depth[i]));
             qnetSeries.Points.Add(new ScatterPoint(qnet[i],depth[i]));
+            if(depth[i] <= yMax && qc[i] > xMax){xMax = qc[i];}//keep track of the highest value in each call
         }
-        plotModel.Series.Add(qcSeries);
+
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Tip Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        //adding series
         plotModel.Series.Add(qtSeries);
-        plotModel.Series.Add(qnetSeries);
+        plotModel.Series.Add(qcSeries);
+        //plotModel.Series.Add(qnetSeries);
         return plotModel;  
     }
-    public void PlotShearStress(Dictionary<string,List<double>> suList, double yMin, double yMax)
+    private Legend CreateLegend()
     {
-        var plotModel = new PlotModel() { };
-        //double xMin = Math.Round(u2.Min(),1); double xMax =Math.Round(u2.Max(),1);
-       // plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        //plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        var legend = new Legend
+        {
+            LegendTitle = "Legend",
+            LegendOrientation = LegendOrientation.Horizontal,
+            LegendPosition = LegendPosition.RightTop,
+            LegendPlacement = LegendPlacement.Inside,
+            /*LegendBackground = OxyColors.White,*/
+            LegendBorder = OxyColors.Black,
+            LegendFontSize = 14,
+            LegendFontWeight = FontWeights.Bold,
+            LegendSymbolLength = 30,
+            LegendMargin = 10 
+        };
+        return legend;
+    }
+    private ScatterSeries CreateScatterSeries(string title, int index)
+    {
+        ScatterSeries series = new ScatterSeries();
+        Dictionary<int,(OxyColor color, MarkerType markerType)> oxyType = new Dictionary<int,(OxyColor color, MarkerType markerType)>()
+        {
+            {1, new (OxyColors.Red,MarkerType.Circle)},
+            {2, new (OxyColors.Blue,MarkerType.Square)},
+            {3, new (OxyColors.Green,MarkerType.Diamond)},
+            {4, new (OxyColors.Yellow,MarkerType.Circle)},
+            {5, new (OxyColors.Red,MarkerType.Square)},
+        };
+        if(oxyType.ContainsKey(index))
+        {
+            series = new ScatterSeries
+            {
+                MarkerType = oxyType[index].markerType,
+                MarkerSize = 2,
+                MarkerStroke = oxyType[index].color,
+                MarkerFill = oxyType[index].color,
+                Title = title
+            };
+        }
+        return series;
+    }
+    public PlotModel PlotSuParameters(Dictionary<string,List<double>> SuParameters, double yMin, double yMax)
+    {
+        var plotModel = new PlotModel() { };//get the x min and maximum with AI
+        var xMax = SuParameters.Values.Max(v => v.Max());
+        var xMin = SuParameters.Values.Min(v => v.Min());
+        //Console.WriteLine($"from su plot {xMin} - {xMax}");//Minimum = xMin, Maximum = xMax, 
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Shear Strength (Su),kPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+
+        int index = 0;
+        List<double> depthList = new List<double>();
+        foreach(var kvp in SuParameters)
+        {
+            if(index > 0)
+            {
+                var key = kvp.Key;
+                var series = CreateScatterSeries(key,index);
+                var legend = CreateLegend();
+                if(depthList.Count > 0 && depthList.Count >= kvp.Value.Count)
+                {
+                    for(int v = 0; v < depthList.Count; v++)
+                    {
+                       if(kvp.Value[v] > 0 && depthList[v] > 0)
+                       {
+                         series.Points.Add(new ScatterPoint(kvp.Value[v],depthList[v]));
+                       }
+                    }
+                    plotModel.Series.Add(series);
+                    plotModel.Legends.Add(legend);      
+                }
+            }
+            else
+            {
+                depthList = kvp.Value;             
+            }
+            index++;
+        }
+        return plotModel;
     }
     public PlotModel PlotPorePressure(List<double> depth,List<double> u2, double yMin, double yMax)
     {
         var plotModel = new PlotModel() { };
-        double xMin = Math.Round(u2.Min(),1); double xMax =Math.Round(u2.Max(),1);
-        plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        //double xMin = Math.Round(u2.Min(),1); double xMax =Math.Round(u2.Max(),1);
+        double xMax = 0;
 
-        var u2Series = new LineSeries
+        var u2Series = new ScatterSeries
         {
             MarkerType = MarkerType.Circle,
-            MarkerSize = 1,
-            Color = OxyColors.Blue,
+            MarkerSize = 0.5,
+            //Color = OxyColors.Blue,
             MarkerFill = OxyColors.Blue,
+            MarkerStroke = OxyColors.Blue,
             Title = "u2"
         };
         for (int i = 0; i < depth.Count; i++)
         {
-            u2Series.Points.Add(new DataPoint(u2[i],depth[i]));
+            u2Series.Points.Add(new ScatterPoint(u2[i],depth[i]));
+            if(depth[i] <= yMax && u2[i] > xMax){xMax = u2[i];}
         }
+
+        if(xMax <= 1){xMax = 1;}else if(xMax <= 2){xMax = 2;};
+        Console.WriteLine($"form pore pressure {xMax}");
+        plotModel.Axes.Add(new LinearAxis {Minimum = -1, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+
+        //Adding sereis
         plotModel.Series.Add(u2Series);
         return plotModel;  
     }
@@ -340,6 +425,7 @@ public class PlotModelService
             MaximumY = y1,
             Text = text,
             Fill = fillColor,
+            FontSize = 20,
             Stroke = OxyColors.Black,
             StrokeThickness = 1,
             HatchStyle = hatchStyle,

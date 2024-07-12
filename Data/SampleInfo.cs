@@ -19,6 +19,7 @@ public class SampleInfo
     public DateTime Date { get; set; }
     public List<(string id, string strata, double startDepth, double endDepth)> BoreholeLogList  = new();
     public SampleCalculationParameters Calculus { get; set; } = new();
+    //public Dictionary<string,List<double>> SuParameters = new Dictionary<string,List<double>>();
 }
 
 public class SampleCalculationParameters

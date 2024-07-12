@@ -3,6 +3,7 @@
 @inject PlotModelService PlotModelService
 @inject NavigationManager navigationManager
 @inject RectanglePlotService rectanglePlot
+@inject IFunctions functions
 @inject IJSRuntime jSRuntime
 @inject IStore store
 @inject State state
@@ -12,7 +13,7 @@
 <div class="graph active">
     <span @onclick="GotoLab" class="x red  @((state.Project.Value.Info.Name != "") ? "active" : "")">X</span>
     <span @onclick="@(e =>Screenshot("chart3"))" class="camera @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-camera-retro"></i></span>
-    @if(yAxisMax > 6)
+    @if(yAxisMax > initialStartDepth + 6)
     {
         <span class="left @((state.Project.Value.Info.Name != "") ? "active" : "")" @onclick="TogglePlotModelBackward"><i class="fas fa-angle-left"></i></span>
     }
@@ -56,15 +57,73 @@
 
     <div>
         <BlazorPlotView Model="@sotrModel" Width="185" Height="550"/>
-        <BlazorPlotView Model="@boreholeModel" Width="150" Height="550"/>
+        <BlazorPlotView Model="@boreholeModel" Width="120" Height="550"/>@*150*@
         @if(state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0)
         {
             <BlazorPlotView Model="@coneModel" Width="220" Height="550" />
-            <BlazorPlotView Model="@poreModel" Width="220" Height="550" />
+            <BlazorPlotView Model="@fsModel" Width="150" Height="550" />@*220*@
+            <BlazorPlotView Model="@poreModel" Width="150" Height="550" />           
         }
-        <BlazorPlotView Model="@wcModel" Width="160" Height="550" />
-        <BlazorPlotView Model="@uwModel" Width="180" Height="550" />
+        <BlazorPlotView Model="@wcModel" Width="140" Height="550" />@*160*@
+        <BlazorPlotView Model="@uwModel" Width="160" Height="550" />
+        <BlazorPlotView Model="@suModel" Width="180" Height="550" />
     </div>
+
+    <div class="borehole-footer">
+        <div class="flex-col">
+            <span class="rect red-back"></span>
+            <b>Drill out</b>
+        </div>
+        <div class="flex-col">
+            <span class="rect blue-back"></span>
+            <b>Sample</b>
+        </div>
+        <div class="flex-col">
+            <span class="rect yellow-back"></span>
+            <b>N/R</b>
+        </div>
+        <div class="flex-col">
+            <span class="rect black-back"></span>
+            <b>Sub-Samples</b>
+        </div>
+        <div class="flex-col">
+            <span class="arrow-down">&#x2193;</span>
+            <b>CPT</b>
+        </div>
+
+        @if(samplingToolDict.Count() > 0)
+        {
+            foreach(var tool in samplingToolDict)
+            {
+                <div class="flex-col">
+                    <span>@tool.Value</span>
+                    <b>@tool.Key</b>
+                </div>
+            }
+        }
+        <div class="flex-col">
+            <span>N/R</span>
+            <b>No Recovery</b>
+        </div>
+        <div class="flex-col">
+            <span>UU</span>
+            <b>UU Triaxial</b>
+        </div>
+        <div class="flex-col">
+            <span>PP</span>
+            <b>Pocket Penetrometer</b>
+        </div>
+        <div class="flex-col">
+            <span>MV</span>
+            <b>Miniature Vane</b>
+        </div>
+        <div class="flex-col">
+            <span>TV</span>
+            <b>Torvane</b>
+        </div>
+
+    </div>
+
  </div>
 </div>
 @code{
@@ -72,23 +131,31 @@
     PlotModel boreholeModel = new PlotModel {Title = ""};
     PlotModel coneModel = new PlotModel { Title = "" };
     PlotModel poreModel = new PlotModel();
+    PlotModel fsModel = new PlotModel();
     PlotModel uwModel = new PlotModel();
     PlotModel wcModel = new PlotModel();
+    PlotModel suModel = new PlotModel();
     int count = 0;
     string msg = "";
     int imgId = 0;
     string msgClass = "";
     double maxBoreholeDepth = 0;
+    double initialStartDepth = 0;
     double yAxisMin = 0;
     double yAxisMax = 0;
     List<SampleInfo> allSOTR = new List<SampleInfo>();
+    Dictionary<string,List<double>> SuParameters = new Dictionary<string,List<double>>();
+    Dictionary<string,string> samplingToolDict = new();
     protected override void OnInitialized()
     {
        GenerateBoreholeLogs();
+       samplingToolDict =  functions.GetSamplingTool();
+       //var su = database.ReadAll("SuParameters").ToList();
+       //Console.WriteLine(su[0].Key+" "+su[0].Value+"\n "+state.Project.Value.Id);
     }
     protected override void OnAfterRender(bool firstRender)
     {
-    count++;
+        count++;
     }
     private void GetAllSOTR()
     {
@@ -102,6 +169,13 @@
                 {
                     allSOTR.Add(val);
                 }
+            }
+            //us id to read su
+            string id = state.Project.Value.Id;
+            var su = database.Read("SuParameters",id);
+            if(su.Key != "" && su.Value != "")
+            {
+                SuParameters = JsonConvert.DeserializeObject<Dictionary<string,List<double>>>(su.Value) ?? new();
             }
         }
     }
@@ -145,13 +219,16 @@
             GetAllSOTR();
             var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
             double cptMaxDepth = 0; //double maxBoreholeDepth = 0;
+            double cptMinDepth = 0;
 
             if(allSOTR.Count > 0)
             {
                 double sampleMaxDepth = allSOTR.Max(x => x.BoreholeEndDepth);
+                double sampleMinDepth = allSOTR.Min(x => x.BoreholeStartDepth);//min start scale
                 if(computedCol.ContainsKey(0) && computedCol[0].Count > 0)//cpt depth
                 {
                     cptMaxDepth = computedCol[0].Max();
+                    cptMinDepth = computedCol[0].Min();
                 }
                 if(cptMaxDepth > sampleMaxDepth)
                 {
@@ -161,8 +238,19 @@
                 {
                     maxBoreholeDepth = sampleMaxDepth;
                 }
+                if(computedCol.ContainsKey(0) && computedCol[0].Count > 0 && cptMinDepth < sampleMinDepth)
+                {
+                    initialStartDepth = cptMinDepth;
+                }
+                else
+                {
+                    initialStartDepth = sampleMinDepth;
+                }
+                yAxisMax = initialStartDepth;
+                yAxisMin = initialStartDepth;
                 allSOTR = allSOTR.OrderBy(x => x.BoreholeEndDepth).ToList();
                 TogglePlotModelForward();
+                //Console.WriteLine($"from BH Logs sample - {sampleMinDepth} cpt - {cptMinDepth} init {initialStartDepth} sotr {allSOTR.Count}");
             }
         }
         catch(Exception e)
@@ -179,6 +267,10 @@
         poreModel = PlotPorePressureModel();
         uwModel = PlotModelService.PlotUnitWeight(allSOTR,yAxisMin,yAxisMax);
         wcModel = PlotModelService.PlotWaterContent(allSOTR,yAxisMin,yAxisMax);
+        if(SuParameters.Count() > 0)
+        {
+            suModel = PlotModelService.PlotSuParameters(SuParameters,yAxisMin,yAxisMax);
+        }
     }
     private void TogglePlotModelForward()
     {
@@ -188,7 +280,7 @@
             yAxisMin = yAxisMax;
             yAxisMax = increment;
         }
-        else if(increment > maxBoreholeDepth && maxBoreholeDepth > 6)
+        else if(increment > maxBoreholeDepth && maxBoreholeDepth > initialStartDepth + 6)//initialStartDepth + 6
         {
             yAxisMax = maxBoreholeDepth;
             yAxisMin = yAxisMax - 6;
@@ -196,31 +288,29 @@
         else 
         {
             yAxisMax = maxBoreholeDepth;
-            yAxisMin = 0;
+            yAxisMin = initialStartDepth;
         }
         PlotBoreholeModels();
-        //Console.WriteLine($"bhd : {maxBoreholeDepth} min : {yAxisMin} max : {yAxisMax}");
     }
     private void TogglePlotModelBackward()
     {
         double decrement = yAxisMax - 6;
-        if(decrement > 6 && yAxisMin > 0)
+        if(decrement > initialStartDepth + 6 && yAxisMin > initialStartDepth)
         {
             yAxisMax = decrement;
             yAxisMin = yAxisMax - 6;
         }
-        else if(maxBoreholeDepth > 6)
+        else if(maxBoreholeDepth > initialStartDepth + 6)
         {
-            yAxisMin = 0;
-            yAxisMax = 6;
+            yAxisMin = initialStartDepth;
+            yAxisMax = initialStartDepth + 6;
         }
-        else if(maxBoreholeDepth < 6)
+        else if(maxBoreholeDepth < initialStartDepth + 6)
         {
-            yAxisMin = 0;
+            yAxisMin = initialStartDepth;
             yAxisMax = maxBoreholeDepth;
         }
         PlotBoreholeModels();
-        //Console.WriteLine($"bhd : {maxBoreholeDepth} min : {yAxisMin} max : {yAxisMax}");
     }
     private async void ChangeImage(int id)
     {
@@ -275,6 +365,7 @@
         poreModel = new PlotModel();
         uwModel = new PlotModel();
         wcModel = new PlotModel();
+        suModel = new PlotModel();
     }
     private void GotoLab()
     {
