@@ -1,7 +1,7 @@
 {
   "version": 3,
   "targets": {
-    "net6.0": {
+    "net8.0": {
       "BouncyCastle.Cryptography/2.3.0": {
         "type": "package",
         "compile": {
@@ -44,12 +44,12 @@
       "ExtendedNumerics.BigDecimal/2023.1000.0.230": {
         "type": "package",
         "compile": {
-          "lib/net6.0/ExtendedNumerics.BigDecimal.dll": {
+          "lib/net7.0/ExtendedNumerics.BigDecimal.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/ExtendedNumerics.BigDecimal.dll": {
+          "lib/net7.0/ExtendedNumerics.BigDecimal.dll": {
             "related": ".xml"
           }
         }
@@ -165,10 +165,10 @@
           "OxyPlot.Core": "2.1.2"
         },
         "compile": {
-          "lib/net6.0/oxyplot.blazor.dll": {}
+          "lib/net8.0/oxyplot.blazor.dll": {}
         },
         "runtime": {
-          "lib/net6.0/oxyplot.blazor.dll": {}
+          "lib/net8.0/oxyplot.blazor.dll": {}
         },
         "frameworkReferences": [
           "Microsoft.AspNetCore.App"
@@ -1091,7 +1091,7 @@
     }
   },
   "projectFileDependencyGroups": {
-    "net6.0": [
+    "net8.0": [
       "NPOI >= 2.7.0",
       "Newtonsoft.Json >= 13.0.3",
       "Oxyplot.blazor >= 2.5.9",
@@ -1115,14 +1115,14 @@
         "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "net6.0"
+        "net8.0"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "projectReferences": {}
         }
       },
@@ -1138,8 +1138,8 @@
       }
     },
     "frameworks": {
-      "net6.0": {
-        "targetAlias": "net6.0",
+      "net8.0": {
+        "targetAlias": "net8.0",
         "dependencies": {
           "NPOI": {
             "target": "Package",
@@ -1173,24 +1173,6 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[6.0.32, 6.0.32]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[6.0.32, 6.0.32]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[6.0.32, 6.0.32]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[6.0.32, 6.0.32]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
@@ -1199,7 +1181,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.303\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.303/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
