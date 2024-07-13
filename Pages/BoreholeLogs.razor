@@ -57,16 +57,16 @@
 
     <div>
         <BlazorPlotView Model="@sotrModel" Width="185" Height="550"/>
-        <BlazorPlotView Model="@boreholeModel" Width="120" Height="550"/>@*150*@
+        <BlazorPlotView Model="@boreholeModel" Width="520" Height="550"/>@*150*@
         @if(state.FilteredAndComputedCPTDataInColumnsDict.Value.Count() > 0)
         {
-            <BlazorPlotView Model="@coneModel" Width="220" Height="550" />
-            <BlazorPlotView Model="@fsModel" Width="150" Height="550" />@*220*@
-            <BlazorPlotView Model="@poreModel" Width="150" Height="550" />           
+            <BlazorPlotView Model="@coneModel" Width="195" Height="550" />
+            <BlazorPlotView Model="@fsModel" Width="195" Height="550" />@*220*@
+            <BlazorPlotView Model="@poreModel" Width="195" Height="550" />           
         }
-        <BlazorPlotView Model="@wcModel" Width="140" Height="550" />@*160*@
-        <BlazorPlotView Model="@uwModel" Width="160" Height="550" />
-        <BlazorPlotView Model="@suModel" Width="180" Height="550" />
+        <BlazorPlotView Model="@wcModel" Width="195" Height="550" />@*160*@
+        <BlazorPlotView Model="@uwModel" Width="195" Height="550" />
+        <BlazorPlotView Model="@suModel" Width="195" Height="550" />
     </div>
 
     <div class="borehole-footer">
@@ -212,6 +212,21 @@
         }
         return new PlotModel();
     }
+        private PlotModel PlotSleeveFrictionModel()
+    {
+        var computedCol = state.FilteredAndComputedCPTDataInColumnsDict.Value;
+        if(computedCol != null && computedCol.Count() > 11)
+        {
+            List<double> depth = computedCol[0];
+            List<double> fs = computedCol[2];
+            if(depth.Count > 0 && fs.Count > 0)
+            {
+                var fm = PlotModelService.PlotSleeveFriction(depth, fs,yAxisMin,yAxisMax);
+                return fm;
+            }
+        }
+        return new PlotModel();
+    }
     private void GenerateBoreholeLogs()
     {
         try
@@ -264,6 +279,7 @@
         sotrModel = rectanglePlot.PlotSampleInfo(allSOTR,yAxisMin,yAxisMax);
         boreholeModel = PlotModelService.PlotStrata(allSOTR,yAxisMin,yAxisMax);
         coneModel = PlotConeModel();
+        fsModel = PlotSleeveFrictionModel();
         poreModel = PlotPorePressureModel();
         uwModel = PlotModelService.PlotUnitWeight(allSOTR,yAxisMin,yAxisMax);
         wcModel = PlotModelService.PlotWaterContent(allSOTR,yAxisMin,yAxisMax);

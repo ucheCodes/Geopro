@@ -19,7 +19,7 @@ class RectanglePlotService //: IRectanglePlotService
         foreach (var data in sample)
         {
             string text = $"{data.TestId} / {data.SamplingTool}";
-            CreateRectangleWithText(plotModel,text, 18.2, 34, data.BoreholeStartDepth, data.BoreholeEndDepth,OxyColors.Transparent, OxyColors.Black,OxyColors.Black);//description fot the sotr
+            CreateRectangleWithText(plotModel,text, 18.2, 34, data.BoreholeStartDepth, data.BoreholeEndDepth,OxyColors.Transparent, OxyColors.Black,OxyColors.Black);
             switch(data.SampleType)
             {
                 case "sample":
