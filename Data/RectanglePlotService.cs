@@ -15,7 +15,7 @@ class RectanglePlotService //: IRectanglePlotService
     {
         var plotModel = new PlotModel();//TitlePosition = 0.5,AxisTitleDistance = 10
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 34,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Insitu Test",TitleFontWeight = FontWeights.Bold});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, MinorStep = 0.1, MajorStep = 0.5, StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
         foreach (var data in sample)
         {
             string text = $"{data.TestId} / {data.SamplingTool}";

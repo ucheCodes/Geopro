@@ -78,8 +78,8 @@ public class PlotModelService
     public PlotModel PlotStrata(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel();
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 60,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata",TitleFontWeight = FontWeights.Bold});
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 60,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata / Description",TitleFontWeight = FontWeights.Bold});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,MajorStep = 0.5, Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
         (HatchStyle hatchStyle, OxyColor color,string strata) legend = new (HatchStyle.None,OxyColors.Transparent,"");
         double x0 = 0; double x1 = 10;
         foreach (var data in sample)
@@ -126,9 +126,7 @@ public class PlotModelService
     }
     public PlotModel PlotUnitWeight(List<SampleInfo> sample, double yMin, double yMax)
     {
-        var plotModel = new PlotModel ();
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Unit Weight (kN/m3)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        var plotModel = new PlotModel (); double xMax = 0;
         var legend = new Legend
         {
             LegendTitle = "Legend",
@@ -174,8 +172,13 @@ public class PlotModelService
                 wetSeries.Points.Add(new ScatterPoint(uw.bulkUnitWeightInKNm3,uw.depth));
                 drySeries.Points.Add(new ScatterPoint(uw.dryUnitWeightInKNm3,uw.depth));
                 subSeries.Points.Add(new ScatterPoint(uw.submergedDensityInKNm3,uw.depth));
+                if(uw.depth <= yMax && uw.bulkUnitWeightInKNm3 > xMax){xMax = uw.bulkUnitWeightInKNm3;}
             }
         }
+        double majorStep = Math.Round(xMax / 2,1);
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax,MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Unit Weight (kN/m3)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, MinorStep = 0.1, MajorStep = 0.5, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        //Adding series
         plotModel.Series.Add(wetSeries);
         plotModel.Series.Add(drySeries);
         plotModel.Series.Add(subSeries);
@@ -184,8 +187,8 @@ public class PlotModelService
     public PlotModel PlotWaterContent(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel ();
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = 100, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content,%", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = 100, MajorStep = 50, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content,%", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax,MajorStep = 0.5,MinorStep = 0.1, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         var wcSeries = new ScatterSeries
         {
             MarkerType = MarkerType.Square,
@@ -256,11 +259,12 @@ public class PlotModelService
             qtSeries.Points.Add(new ScatterPoint(qt[i],depth[i]));
             qcSeries.Points.Add(new ScatterPoint(qc[i],depth[i]));
             qnetSeries.Points.Add(new ScatterPoint(qnet[i],depth[i]));
-            if(depth[i] <= yMax && qc[i] > xMax){xMax = qc[i];}//keep track of the highest value in each call
+            if(depth[i] <= yMax && qc[i] > xMax){xMax = Math.Round(qc[i],1);}//keep track of the highest value in each call
         }
 
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Tip Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        double majorStep = xMax / 2;//Math.Round(xMax / 2,1);
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Tip Resistance (MPa)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax,MajorStep = 0.5, MinorStep = 0.1,  Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         //adding series
         plotModel.Series.Add(qtSeries);
         plotModel.Series.Add(qcSeries);
@@ -313,9 +317,10 @@ public class PlotModelService
         var plotModel = new PlotModel() { };//get the x min and maximum with AI
         var xMax = SuParameters.Values.Max(v => v.Max());
         var xMin = SuParameters.Values.Min(v => v.Min());
-        //Console.WriteLine($"from su plot {xMin} - {xMax}");//Minimum = xMin, Maximum = xMax, 
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Shear Strength (Su),kPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        //Console.WriteLine($"from su plot {xMin} - {xMax}");//Minimum = xMin, Maximum = xMax,
+        double majorStep = Math.Round(xMax / 2,2); 
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Shear Strength (Su),kPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, MajorStep = 0.5, MinorStep = 0.1, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         int index = 0;
         List<double> depthList = new List<double>();
@@ -363,13 +368,12 @@ public class PlotModelService
         for (int i = 0; i < depth.Count; i++)
         {
             fsSeries.Points.Add(new ScatterPoint(fs[i],depth[i]));
-            if(depth[i] <= yMax && fs[i] > xMax){xMax = fs[i];}
+            if(depth[i] <= yMax && fs[i] > xMax){xMax = Math.Round(fs[i],2);}
         }
 
-        //if(xMax <= 1){xMax = 1;}else if(xMax <= 2){xMax = 2;};//Minimum = -0.2, Maximum = 0.5, 
-        //Console.WriteLine($"from plotModel service fs min - {fs.Min()} max - {xMax}");//Minimum = -1,
-        plotModel.Axes.Add(new LinearAxis {Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Sleeve Fr,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+        double majorStep = xMax / 2;//Math.Round(xMax / 2,2); 
+        plotModel.Axes.Add(new LinearAxis {Maximum = xMax,MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Sleeve Fr,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, MinorStep = 0.1, MajorStep = 0.5, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         //Adding sereis
         plotModel.Series.Add(fsSeries);
@@ -411,7 +415,7 @@ public class PlotModelService
     public PlotModel PlotPorePressure(List<double> depth,List<double> u2, double yMin, double yMax)
     {
         var plotModel = new PlotModel() { };
-        double xMax = 0;
+        double xMax = 0; double xMin = 0;
 
         double interval = 0;
         LineSeries ls = LineSeriesHelper(OxyColors.Blue,1);
@@ -427,12 +431,15 @@ public class PlotModelService
             }
             ls.Points.Add(new DataPoint(u2[i],depth[i]));
             if(depth[i] <= yMax && u2[i] > xMax){xMax = u2[i];}
+            if(depth[i] <= yMax && u2[i] < xMin){xMin = u2[i];}
             prevDepth = depth[i];
         }
-        double xMin = Math.Floor(u2.Min() * 10) / 10;
-        //Console.WriteLine($"{xMin} -- {xMax}");
-        plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
-        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
+
+        double majorStep = Math.Round((xMax + xMin) / 2,2); 
+        if(majorStep < 0){majorStep = Math.Round(xMax / 2,2); }
+        //Console.WriteLine($"{xMin} <--> {xMax} <---> {majorStep}");
+        plotModel.Axes.Add(new LinearAxis {Minimum = xMin, Maximum = xMax,MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Pore Pressure,MPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, MajorStep = 0.5, MinorStep = 0.1, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         //Adding sereis
         plotModel.Series.Add(ls);
