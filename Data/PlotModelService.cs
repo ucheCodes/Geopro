@@ -89,9 +89,9 @@ public class PlotModelService
                 foreach(var log in data.BoreholeLogList)
                 {
                     legend = GetLegend(log.strata);//data.SampleDesc
-                    string desc = DissectTextForRectangle(data.SampleDesc,50);
+                    string desc = DissectTextForRectangle(log.description,50);
                     plotModel.Annotations.Add(CreateRectangle(log.strata, 20, x0, x1, log.startDepth, log.endDepth, legend.color, legend.hatchStyle));
-                    plotModel.Annotations.Add(CreateRectangle(desc,12, 10, 60, log.startDepth, log.endDepth, OxyColors.Transparent, HatchStyle.None));
+                    plotModel.Annotations.Add(CreateRectangle(desc,14, 10, 60, log.startDepth, log.endDepth, OxyColors.Transparent, HatchStyle.None));
                 }
             }
             //Console.WriteLine(data.SampleDesc.Length);
@@ -186,7 +186,7 @@ public class PlotModelService
     }
     public PlotModel PlotWaterContent(List<SampleInfo> sample, double yMin, double yMax)
     {
-        var plotModel = new PlotModel ();
+        var plotModel = new PlotModel ();//StringFormat = "0.######",//for correct formatting of decimal places
         plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = 100, MajorStep = 50, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Water Content,%", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
         plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax,MajorStep = 0.5,MinorStep = 0.1, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         var wcSeries = new ScatterSeries

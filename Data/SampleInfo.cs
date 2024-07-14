@@ -17,7 +17,7 @@ public class SampleInfo
     public string SampleDesc { get; set; } = "";
     public string SampleType { get; set; } = "";
     public DateTime Date { get; set; }
-    public List<(string id, string strata, double startDepth, double endDepth)> BoreholeLogList  = new();
+    public List<(string id, string strata,string description, double startDepth, double endDepth)> BoreholeLogList  = new();
     public SampleCalculationParameters Calculus { get; set; } = new();
     //public Dictionary<string,List<double>> SuParameters = new Dictionary<string,List<double>>();
 }

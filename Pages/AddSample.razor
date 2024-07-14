@@ -265,6 +265,9 @@
             <div class="input-group">
                 <input @bind="boreholeEndDepth" type="text" placeholder="borehole end depth in meter" name="input1">
             </div>
+            <div class="input-group">
+                <textarea @bind="boreholeDesc" id="textarea" placeholder="Detailed sample / Borehole Description"  name="textarea"></textarea>
+            </div>
             @if(SOTR.BoreholeLogList.Count > 0)
             {
                 <div class="circle-btns">
@@ -324,6 +327,7 @@
     string boreholeStartDepth = "";//for logs
     string boreholeEndDepth = "";
     string boreholeStrata ="";
+    string boreholeDesc = "";
     string sampleDrillOut = "";
     string subSampleIdCsv = "";
     string subSampleCsv = "";
@@ -334,7 +338,7 @@
     string containsCarbonate = "";
     bool showSampleImage = true;
     string sampleImagePath = "";
-    (string id, string strata, double startDepth, double endDepth) selectedBoreholeLog = ("","",0,0);
+    (string id, string strata,string description, double startDepth, double endDepth) selectedBoreholeLog = ("","","",0,0);
     /*unit weight/ bulk density*/
     string weightOfRingInGrams = "";
     string weightOfRingAndWetSampleInGrams = "";
@@ -758,7 +762,7 @@
         if(double.TryParse(boreholeStartDepth, out bsd) && double.TryParse(boreholeEndDepth, out bed) && bsd < bed && boreholeStrata != "")
         {
             string id = selectedBoreholeLog.id;
-            selectedBoreholeLog = (id,boreholeStrata,bsd,bed);
+            selectedBoreholeLog = (id,boreholeStrata,boreholeDesc,bsd,bed);
             //var bhList = SOTR.BoreholeLogList;
             var bhList = SOTR.BoreholeLogList.Where(x => x.id != id).ToList() ?? new();
             bhList.Add(selectedBoreholeLog);
@@ -800,7 +804,7 @@
         string id = e.Value?.ToString() ?? "";
         if(id == "")
         {
-            selectedBoreholeLog = ("","",0,0);
+            selectedBoreholeLog = ("","","",0,0);
             ClearBHLogParams();
         }
         else
@@ -815,12 +819,14 @@
         boreholeStartDepth = "";
         boreholeEndDepth = "";
         boreholeStrata = "";
+        boreholeDesc = "";
     }
     private void SetBHLogParams()
     {
         boreholeStartDepth = selectedBoreholeLog.startDepth.ToString();
         boreholeEndDepth = selectedBoreholeLog.endDepth.ToString();
         boreholeStrata = selectedBoreholeLog.strata;
+        boreholeDesc = selectedBoreholeLog.description;
     }
     private void GetBHLogParams()
     {
@@ -830,7 +836,7 @@
             SetBHLogParams();
         }
         else{
-            selectedBoreholeLog = ("","",0,0);
+            selectedBoreholeLog = ("","","",0,0);
             ClearBHLogParams();
         }
     }
@@ -893,7 +899,7 @@
         selectedNmcParameters = ("",0,0,0,0,0);
         ClearNMCParams();
         //logs
-        selectedBoreholeLog = ("","",0,0);
+        selectedBoreholeLog = ("","","",0,0);
         ClearBHLogParams();
         //Tv
         tvScaleReading = "";
