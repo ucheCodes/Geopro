@@ -177,6 +177,29 @@
   right: 42px;
   top: 8px;
 }
+.graph .view{
+  font-size: 1.6rem;
+  position: absolute;
+  right: 120px;
+  top: 8px;
+}
+.graph .add{
+  font-size: 1.6rem;
+  position: absolute;
+  right: 80px;
+  top: 8px;
+}
+.graph .counter{
+  /*width: 1.6rem;
+  height: 1.6rem;*/
+  font-size: 1rem;
+  position: absolute;
+  right: 70px;
+  top: 2px;
+  border-radius: 50%;
+  color: green;
+  font-weight: 700;
+}
 .graph .left{
   font-size: 1.6rem;
   position: absolute;
@@ -186,7 +209,7 @@
 .graph .right{
   font-size: 1.6rem;
   position: absolute;
-  right: 100px;
+  right: 160px;
   top: 8px;
 }
 .graph .camera:hover{
@@ -194,7 +217,10 @@
   font-size: 1.8rem;
   cursor: pointer;
 }
-.graph .x.active, .graph .camera.active, .graph .left.active, .graph .right.active{
+.graph .counter.active{
+  top: 80px;
+}
+.graph .x.active, .graph .camera.active, .graph .left.active, .graph .right.active,.graph .view.active, .graph .add.active{
   top: 85px;
 }
 .x{

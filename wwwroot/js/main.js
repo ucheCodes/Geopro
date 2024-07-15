@@ -7,6 +7,17 @@ window.saveAsFile = function (fileName, fileContent) {
     anchor.click();
     window.URL.revokeObjectURL(anchor.href);
 };
+window.blazorExtensions = {
+    addHtmlContent: function (id) {
+        return document.documentElement.outerHTML;
+    },
+    downloadFile: function (filename, url) {
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+    }
+};
 
 
 /*function openDialog(id) {

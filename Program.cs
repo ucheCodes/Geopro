@@ -3,8 +3,15 @@ using Microsoft.AspNetCore.Components.Web;
 using PenPro.Data;
 using PenPro.Database;
 using PenPro.Store;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//custom assembly code to convert html pages to pdf
+var context = new CustomAssemblyLoadContext();
+context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "wkhtmltox", "bin", "wkhtmltox.dll"));
+
 
 // Add services to the container.
 builder.Services.AddRazorPages();
@@ -20,6 +27,9 @@ builder.Services.AddScoped<UploadImage>();
 builder.Services.AddScoped<PlotModelService>();
 builder.Services.AddScoped<RectanglePlotService>();
 builder.Services.AddScoped<INPOIExcelReader,NPOIExcelReader>();
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+builder.Services.AddScoped<PdfService>();
+builder.Services.AddScoped<HtmlContentService>();
 
 var app = builder.Build();
 

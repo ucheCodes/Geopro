@@ -1,5 +1,7 @@
 ﻿@page "/borelogs"
 @inject DatabaseService database
+@inject PdfService PdfService
+@inject HtmlContentService HtmlContentService
 @inject PlotModelService PlotModelService
 @inject NavigationManager navigationManager
 @inject RectanglePlotService rectanglePlot
@@ -12,7 +14,10 @@
 <InputFile type="file" id="image" style="display: none;" OnChange="@LoadFile" accept=".png,.jpg,.jpeg" />
 <div class="graph active">
     <span @onclick="GotoLab" class="x red  @((state.Project.Value.Info.Name != "") ? "active" : "")">X</span>
+    <span @onclick="@(e =>GeneratePdfFromCollection("chart3"))" class="view @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-eye"></i></span>
+    <span @onclick="@(e =>AddCurrentPageToPdfCollection("chart3"))" class="add @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-download"></i></span>
     <span @onclick="@(e =>Screenshot("chart3"))" class="camera @((state.Project.Value.Info.Name != "") ? "active" : "")"><i class="fas fa-camera-retro"></i></span>
+    <div class="counter @((state.Project.Value.Info.Name != "") ? "active" : "")">25</div>
     @if(yAxisMax > initialStartDepth + 6)
     {
         <span class="left @((state.Project.Value.Info.Name != "") ? "active" : "")" @onclick="TogglePlotModelBackward"><i class="fas fa-angle-left"></i></span>
@@ -363,6 +368,34 @@
         {
             msg = er.Message.ToString();
             msgClass = "red";
+        }
+    }
+    private async Task AddCurrentPageToPdfCollection(string id)
+    {
+        // Get the current page's HTML content
+        var htmlContent = await jSRuntime.InvokeAsync<string>("blazorExtensions.addHtmlContent",id);
+        // Add HTML content to the collection
+        HtmlContentService.AddHtmlContent(htmlContent);
+        Console.WriteLine($"{htmlContent.Count()} :--> {htmlContent}");
+    }
+    private async Task GeneratePdfFromCollection(string id)
+    {
+        var htmlContents = HtmlContentService.GetHtmlContents();
+        // Convert HTML contents to a single PDF
+        if(htmlContents.Count > 0)
+        {
+            var pdfBytes = PdfService.ConvertHtmlCollectionToPdf(htmlContents);
+
+            // Save PDF (you might want to save it on the server or return it to the client)
+            var base64Pdf = Convert.ToBase64String(pdfBytes);
+            var url = $"data:application/pdf;base64,{base64Pdf}";
+            string outputPdfPath = $"{state.Project.Value.Info.TestNumber}.pdf";
+            await jSRuntime.InvokeVoidAsync("blazorExtensions.downloadFile", outputPdfPath, url);
+
+            // Clear the collection after generating the PDF
+            HtmlContentService.ClearHtmlContents();
+
+            Console.WriteLine("PDF generated successfully!");
         }
     }
     private async void Screenshot(string id)
