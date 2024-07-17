@@ -1,0 +1,49 @@
+﻿@page "/pdf-view"
+@inject IJSRuntime jSRuntime
+@inject NavigationManager navigationManager
+@inject State state
+
+<div class="pdf-view-header">
+    <h3>Pdf Views</h3>
+    <div class="icons">
+        <span @onclick="DownloadPdf"><i class="fas fa-save"></i></span>
+        <span @onclick="GetPdfImagesFromJs"><i class="fas fa-eye"></i></span>
+        <span @onclick="redo"><i class="fas fa-redo"></i></span>
+        <span @onclick="undo"><i class="fas fa-undo"></i></span>
+        <span @onclick="@(() => {navigationManager.NavigateTo("/borelogs");})"><i class="fas fa-x red"></i></span>
+    </div>
+</div>
+<div class="flex-col" id="pdf-view">
+
+</div>
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+         //if(firstRender)
+         //{
+           // GetPdfImagesFromJs();
+         //}
+    }
+
+    private async Task DownloadPdf()
+    {
+        if(state.Project.Value.Id != "")
+        {
+            string filename = $"{state.Project.Value.Info.TestNumber}_{Guid.NewGuid().ToString()}";
+            await jSRuntime.InvokeAsync<string>("blazorExtensions.captureAndConvertToPDF",filename);
+        }
+    }
+    private async void GetPdfImagesFromJs()
+    {
+         await jSRuntime.InvokeVoidAsync("appendImagesToContainer");
+    }
+    private async void undo()
+    {
+        await jSRuntime.InvokeVoidAsync("removeLastData");
+    }
+    private async void redo()
+    {
+        await jSRuntime.InvokeVoidAsync("appendRemovedData");
+    }
+}

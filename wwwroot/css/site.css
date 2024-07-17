@@ -410,7 +410,7 @@ img{
   width: 100%;
 }
 /*borehole footer*/
-.borehole-footer{
+.borehole-footer,.pdf-view-header{
   width: 98%;
   height: 50px;
   margin: 5px;
@@ -420,6 +420,12 @@ img{
   background: #eee;
   display: flex;
 }
+.pdf-view-header{
+  justify-content: space-between;
+  background-color: #555;
+  color: #fff;
+  position: sticky;
+}
 .arrow-down{
   height: 25px;
   font-size: 1rem;
@@ -428,6 +434,11 @@ img{
   display: flex;
   flex-direction: column;
   margin: 0 5px;
+}
+.flex-row{
+  display: flex;
+  flex-direction: row;
+  margin: 5px;
 }
 .rect{
   width: 60px;

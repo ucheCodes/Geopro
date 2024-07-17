@@ -1,6 +1,6 @@
     // Global data container
     window.globalDataContainer = [];
-
+    window.removedData = "";
     // Function to add data to the container
     function addData(data) {
         window.globalDataContainer.push(data);
@@ -10,15 +10,46 @@
     function getData() {
         return window.globalDataContainer;
     }
+    function appendImagesToContainer() {
+        const container = document.getElementById('pdf-view');
+        container.innerHTML = ''; // Clear the container
+        if (window.globalDataContainer.length > 0) {
+            window.globalDataContainer.forEach((imgSrc) => {
+                const imgElement = document.createElement('img');
+                imgElement.src = imgSrc;
+                container.appendChild(imgElement);
+            });
+        }
+    }
 
     // Function to clear the container
     function clearData() {
         window.globalDataContainer = [];
     }
     //get length of data
-    function removeLastData() {
-        return window.globalDataContainer.pop();
+    function getDataCount() {
+        return window.globalDataContainer.length;
     }
+
+    function removeLastData() {
+        if (window.globalDataContainer.length > 0) {
+            let removedData = window.globalDataContainer.pop();
+            window.removedData = removedData;
+            appendImagesToContainer();
+        }
+        //return removedData;
+    }
+    function appendRemovedData() {
+        if(window.removedData != "")
+        {
+            addData(window.removedData);
+            appendImagesToContainer();
+            window.removedData = "";
+        }
+    }
+
+
+
 
 window.saveAsFile = function (fileName, fileContent) {
     const blob = new Blob([fileContent], { type: 'text/plain' });
@@ -63,8 +94,6 @@ window.blazorExtensions = {
         const canvas = await html2canvas(document.querySelector("#"+id));
         const imgData = canvas.toDataURL('image/png');
         addData(imgData);
-        /*var del = window.globalDataContainer.pop();
-        console.log("removed: "+del);*/
         return window.globalDataContainer.length;
     }
 };

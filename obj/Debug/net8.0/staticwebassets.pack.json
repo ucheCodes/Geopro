@@ -129,38 +129,6 @@
       "PackagePath": "staticwebassets\\js\\main.js"
     },
     {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\libwkhtmltox.a",
-      "PackagePath": "staticwebassets\\wkhtmltox\\bin\\libwkhtmltox.a"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\libwkhtmltox.dll",
-      "PackagePath": "staticwebassets\\wkhtmltox\\bin\\libwkhtmltox.dll"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\wkhtmltoimage.exe",
-      "PackagePath": "staticwebassets\\wkhtmltox\\bin\\wkhtmltoimage.exe"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\wkhtmltopdf.exe",
-      "PackagePath": "staticwebassets\\wkhtmltox\\bin\\wkhtmltopdf.exe"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\include\\wkhtmltox\\dllbegin.inc",
-      "PackagePath": "staticwebassets\\wkhtmltox\\include\\wkhtmltox\\dllbegin.inc"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\include\\wkhtmltox\\dllend.inc",
-      "PackagePath": "staticwebassets\\wkhtmltox\\include\\wkhtmltox\\dllend.inc"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\include\\wkhtmltox\\image.h",
-      "PackagePath": "staticwebassets\\wkhtmltox\\include\\wkhtmltox\\image.h"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\include\\wkhtmltox\\pdf.h",
-      "PackagePath": "staticwebassets\\wkhtmltox\\include\\wkhtmltox\\pdf.h"
-    },
-    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.PenPro.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },
