@@ -61,6 +61,7 @@ class RectanglePlotService //: IRectanglePlotService
                         if(double.TryParse(array[i], out endDepth))
                         {
                             CreateRectangleWithText(plotModel,text, 0.5,12.5,startDepth,endDepth, OxyColors.Black,OxyColors.White,OxyColors.White);
+                            //Console.WriteLine($"s : {startDepth} e : {endDepth}");
                             startDepth = endDepth;
                         }
                     }

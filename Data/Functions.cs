@@ -18,6 +18,7 @@ class Functions : IFunctions
         {
             {"Wison Push Sampler", "WIP"},
             {"Push Sampler", "PS"},
+            {"Piston Sampler", "P"},
             {"Hammer Sampler", "SH"},
            // {"No Recovery", "N/R"}
         };

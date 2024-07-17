@@ -78,7 +78,7 @@ public class PlotModelService
     public PlotModel PlotStrata(List<SampleInfo> sample, double yMin, double yMax)
     {
         var plotModel = new PlotModel();
-        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 60,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata / Description",TitleFontWeight = FontWeights.Bold});
+        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Top, Minimum = 0, Maximum = 60,IsZoomEnabled = false, IsPanEnabled = false, FontSize = 14, Title="Soil Strata / Lithology Description",TitleFontWeight = FontWeights.Bold});
         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Minimum = yMin,Maximum = yMax,MajorStep = 0.5, Title="Penetration (m)",TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 15,FontSize = 14});
         (HatchStyle hatchStyle, OxyColor color,string strata) legend = new (HatchStyle.None,OxyColors.Transparent,"");
         double x0 = 0; double x1 = 10;
@@ -172,7 +172,7 @@ public class PlotModelService
                 wetSeries.Points.Add(new ScatterPoint(uw.bulkUnitWeightInKNm3,uw.depth));
                 drySeries.Points.Add(new ScatterPoint(uw.dryUnitWeightInKNm3,uw.depth));
                 subSeries.Points.Add(new ScatterPoint(uw.submergedDensityInKNm3,uw.depth));
-                if(uw.depth <= yMax && uw.bulkUnitWeightInKNm3 > xMax){xMax = uw.bulkUnitWeightInKNm3;}
+                if(uw.depth <= yMax && uw.bulkUnitWeightInKNm3 > xMax){xMax = Math.Round(uw.bulkUnitWeightInKNm3,2);}
             }
         }
         double majorStep = Math.Round(xMax / 2,1);
