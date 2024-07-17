@@ -133,16 +133,16 @@
       "PackagePath": "staticwebassets\\wkhtmltox\\bin\\libwkhtmltox.a"
     },
     {
+      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\libwkhtmltox.dll",
+      "PackagePath": "staticwebassets\\wkhtmltox\\bin\\libwkhtmltox.dll"
+    },
+    {
       "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\wkhtmltoimage.exe",
       "PackagePath": "staticwebassets\\wkhtmltox\\bin\\wkhtmltoimage.exe"
     },
     {
       "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\wkhtmltopdf.exe",
       "PackagePath": "staticwebassets\\wkhtmltox\\bin\\wkhtmltopdf.exe"
-    },
-    {
-      "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\bin\\wkhtmltox.dll",
-      "PackagePath": "staticwebassets\\wkhtmltox\\bin\\wkhtmltox.dll"
     },
     {
       "Id": "C:\\Users\\user\\Codes\\PenPro\\wwwroot\\wkhtmltox\\include\\wkhtmltox\\dllbegin.inc",

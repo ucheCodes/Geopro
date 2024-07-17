@@ -43,10 +43,6 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "DinkToPdf": {
-              "target": "Package",
-              "version": "[1.0.8, )"
-            },
             "NPOI": {
               "target": "Package",
               "version": "[2.7.0, )"
@@ -58,10 +54,6 @@
             "Oxyplot.blazor": {
               "target": "Package",
               "version": "[2.5.9, )"
-            },
-            "PdfSharp": {
-              "target": "Package",
-              "version": "[6.1.1, )"
             },
             "SixLabors.ImageSharp": {
               "target": "Package",
