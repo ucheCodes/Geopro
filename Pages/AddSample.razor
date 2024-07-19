@@ -12,9 +12,9 @@
             <h3>@Title</h3>
         </div>
         <span class="@msgClass">@sotrMsg</span>
-        @*<div class="input-group">
-            <p class="p">@state.Project.Value.Info.TestNumber     E: @state.Project.Value.Info.Easting m / N: @state.Project.Value.Info.Northing m</p>
-        </div>*@
+        <div class="input-group">
+            <h6 class="p">@state.Project.Value.Info.TestNumber     E: @state.Project.Value.Info.Easting m / N: @state.Project.Value.Info.Northing m</h6>
+        </div>
         <div class="input-group">
             <select @bind="testType">
                 <option value="">Select Test Type</option>
@@ -28,18 +28,17 @@
                 <select @bind="selectCalc">
                     <option value="">Compute sample parameter</option>
                     <option value="log">Add Boring Log</option>
-                    <option value="uw">Unit Weight</option>
-                    <option value="nmc">Natural Moisture Content (%)</option>
+                    <option value="uw&wc">Unit Weight & Water Content</option>
                     <option value="su">su Test (mv,pp,tv,uu,uuR)</option>
                 </select>
             </div>
-            <div class="input-group">
+            @*<div class="input-group">
                 <select @bind="containsCarbonate">
                     <option value="">Sample contains carbonate?</option>
                     <option value="true">True</option>
                     <option value="false">False</option>
                 </select>
-            </div>
+            </div>*@
         }
         <div class="input-group">
             <select @bind="samplingTool">
@@ -85,15 +84,15 @@
     <div class="sample-box">
         <div class="k">
         <span @onclick="@((e) => {selectCalc = string.Empty;})" class="red x">X</span> 
-        @if(selectCalc == "uw")
+        @if(selectCalc == "uw&wc")
         {
-            <h3>Compute Unit Weight</h3>
+            <h3>Compute Unit Weight uw : @SOTR.Calculus.UnitWeightParamList.Count & wc: @SOTR.Calculus.MoistureContentParamList.Count</h3>
             <span class="@msgClass">@msg</span>
-            @if(SOTR.Calculus.UnitWeightParamList.Count > 0)
+            @if(SOTR.Calculus.UnitWeightParamList.Count > 0 || SOTR.Calculus.MoistureContentParamList.Count > 0)
             {
                 int i = 1;
                 <div class="input-group">
-                    <select  @onchange="OnUWParameterChange">
+                    <select  @onchange="OnUWAndWcParameterChange">
                         <option value="">click  +  to add new  -  remove</option>
                         @foreach(var u in SOTR.Calculus.UnitWeightParamList)
                         {
@@ -128,57 +127,19 @@
                 <p>Volume of ring: <strong>@selectedUW.volumeofRingInMillimeter3.ToString("F2")</strong> mm^3  /  <strong>@selectedUW.volumeofRingInCentimeter3.ToString("F2")</strong> cm^3</p>
             </div>
             <div class="input-group">
+                <p>Natural Moisture Content (%):  <b>@selectedNmcParameters.result</b> %</p>
+            </div>
+            <div class="input-group">
                 <p>Wet Unit Weight (kN/m3): <b>@selectedUW.bulkUnitWeightInKNm3.ToString("F2")</b> kN/m3</p>
             </div>
             <div class="input-group">
                 <p>Dry UW (kN/m3): <b>@selectedUW.dryUnitWeightInKNm3.ToString("F2")</b> KN/m3 /sub. UW <b>@selectedUW.submergedDensityInKNm3.ToString("F2")</b> KN/m3</p>
             </div>
-            @if(SOTR.Calculus.UnitWeightParamList.Count > 0)
+            @if(SOTR.Calculus.UnitWeightParamList.Count > 0 || SOTR.Calculus.MoistureContentParamList.Count > 0)
             {
                 <div class="circle-btns">
-                    <div @onclick="AddUW" class="items"><span>+</span></div>
-                    <div @onclick="RemoveUW" class="items"><span>-</span></div>
-                </div>
-            }
-        }
-        else if(selectCalc == "nmc")
-        {
-            <h3>Compute Natural Moisture Content Nmc (%)</h3>
-            <span class="@msgClass">@msg</span>
-            @if(SOTR.Calculus.MoistureContentParamList.Count > 0)
-            {
-                int i = 1;
-                <div class="input-group">
-                    <select @onchange="OnNmcParameterChange">
-                        <option value="">click  +  to add new  -  remove</option>
-                        @foreach(var p in SOTR.Calculus.MoistureContentParamList)
-                        {
-                            <option value="@p.id">wc @i : @p.depth m</option>
-                            i++;
-                        }
-                    </select>
-                </div>
-            }
-            <div class="input-group">
-                <input @bind="nmcDepth" type="text" placeholder="test depth in meter" name="input1">
-            </div>
-            <div class="input-group">
-                <input @bind="weightOfRingNmc" type="text" placeholder="Weight of container in grams" name="input1">
-            </div>
-            <div class="input-group">
-                <input @bind="weightOfRingAndWetSampleNmc" type="text" placeholder="Weight of container + wet sample in grams" name="input1">
-            </div>
-            <div class="input-group">
-                <input @bind="weightOfRingAndDrySampleNmc" type="text" placeholder="Weight of container + dry sample in grams" name="input1">
-            </div>
-            <div class="input-group">
-                <p>Natural Moisture Content (%):  <b>@selectedNmcParameters.result</b> %</p>
-            </div>
-            @if(SOTR.Calculus.MoistureContentParamList.Count > 0)
-            {
-                <div class="circle-btns">
-                    <div @onclick="AddNmc" class="items"><span>+</span></div>
-                    <div @onclick="RemoveMmc" class="items"><span>-</span></div>
+                    <div @onclick="AddUWAndWc" class="items"><span>+</span></div>
+                    <div @onclick="RemoveUWAndWc" class="items"><span>-</span></div>
                 </div>
             }
         }
@@ -348,11 +309,6 @@
     string containerLabel = "";
     string uwDepth = "";
     (string id, string containerLabel, double depth, double weightOfRingInGram, double weightOfRingAndWetSampleInGram,double weightOfRingAndDrySampleInGram, double diameterOfRingInMillimeter, double heightOfRingInMillimeter, double volumeofRingInMillimeter3,double volumeofRingInCentimeter3, double bulkUnitWeightInKNm3, double dryUnitWeightInKNm3,double submergedDensityInKNm3) selectedUW = ("","",0,0,0,0,0,0,0,0,0,0,0);
-    /*Natural Mositure Content*/
-    string weightOfRingNmc = "";
-    string weightOfRingAndWetSampleNmc = "";
-    string weightOfRingAndDrySampleNmc = "";
-    string nmcDepth = "";
     (string id, double depth, double weightOfRing, double weightOfRingAndWetSample, double weightOfRingAndDrySample, double result) selectedNmcParameters = ("",0,0,0,0,0);
     /*Torvane Test*/
     string tvVaneValue = "";
@@ -421,27 +377,25 @@
             {
                 sotrMsg = "start & end depth must be valid numbers, start depth must be less than end depth";
                 msgClass = "red";
-                //Console.WriteLine(sotrMsg);
             }
         }
         else
         {
             msgClass = "red";
             sotrMsg = "Kindly fill test Id, select sampling tool and other required fields! ";
-            //Console.WriteLine(sotrMsg);
         }
         msg = "";
         msgClass = "";
     }
     private void SubmitCalculus()
     {
-        if(selectCalc == "uw")
+        if(selectCalc == "uw&wc")
         {
-            ComputeUW();
+            ComputeUWAndWc();
         }
         else if(selectCalc == "nmc")
         {
-            ComputeNmc();
+           // ComputeNmc();
         }
         else if(selectCalc == "torvane")
         {
@@ -529,11 +483,8 @@
             if(SOTR.ContainsCarbonate){containsCarbonate = "true";}
 
             /*wet unit weight/ bulk density*/
-            GetUWParameters();
-            SetUWParameters();
-            //Nmc
-            GetNmcParameters();
-            SetNmcParameters();
+            GetUWAndWcParameters();
+            SetUWAndWcParameters();
             //log
             //SetBHLogParams();
             GetBHLogParams();
@@ -560,18 +511,31 @@
     }
 
     //unit weight
-    private void GetUWParameters()
+    private void GetUWAndWcParameters()
     {
-        if(SOTR.Calculus.UnitWeightParamList.Count > 0)
+        if(SOTR.Calculus.UnitWeightParamList.Count > 0 && SOTR.Calculus.MoistureContentParamList.Count > 0)
         {
             selectedUW = SOTR.Calculus.UnitWeightParamList[0];
+            selectedNmcParameters = SOTR.Calculus.MoistureContentParamList[0];
         }
-        else
+        else if (SOTR.Calculus.UnitWeightParamList.Count == 0 && SOTR.Calculus.MoistureContentParamList.Count == 0)
         {
             selectedUW = ("","",0,0,0,0,0,0,0,0,0,0,0);
+            selectedNmcParameters = new("",0,0,0,0,0);
         }
+        else if(SOTR.Calculus.UnitWeightParamList.Count > 0)
+        {
+            selectedUW = SOTR.Calculus.UnitWeightParamList[0];
+            selectedNmcParameters = new("",0,0,0,0,0);
+        }
+        else if(SOTR.Calculus.MoistureContentParamList.Count > 0)
+        {
+            selectedNmcParameters = SOTR.Calculus.MoistureContentParamList[0];
+            selectedUW = ("","",0,0,0,0,0,0,0,0,0,0,0);
+        }
+        
     }
-    private void SetUWParameters()
+    private void SetUWAndWcParameters()
     {
         containerLabel = selectedUW.containerLabel.ToString();
         weightOfRingInGrams = selectedUW.weightOfRingInGram.ToString();
@@ -581,46 +545,52 @@
         heightOfRingInMillimeter = selectedUW.heightOfRingInMillimeter.ToString();
         uwDepth = selectedUW.depth.ToString();
     }
-    private void AddUW()
+    private void AddUWAndWc()
     {
 
-        if(selectedUW.bulkUnitWeightInKNm3 == 0 || selectedUW.dryUnitWeightInKNm3 == 0)
+        if(selectedUW.bulkUnitWeightInKNm3 == 0 || selectedNmcParameters.result == 0)
         {
-            ComputeUW();
+            ComputeUWAndWc();
         }
-        OnUWParameterChange(new ChangeEventArgs { Value = ""});
+        OnUWAndWcParameterChange(new ChangeEventArgs { Value = ""});
         msg = "";
     }
-    private void RemoveUW()
+    private void RemoveUWAndWc()
     {
         if(selectedUW.id != "")
         {
             double selectedDepth = selectedUW.depth;
             var uwList = SOTR.Calculus.UnitWeightParamList;
             uwList = uwList.Where(d => d.id != selectedUW.id).ToList();
-            SOTR.Calculus.UnitWeightParamList = uwList;   
-            OnNmcParameterChange(new ChangeEventArgs { Value = ""});
-            msg = $"you removed unit weight parameter : {selectedDepth}m";
+            SOTR.Calculus.UnitWeightParamList = uwList; 
+
+            var nmcList = SOTR.Calculus.MoistureContentParamList;
+            nmcList = nmcList.Where(d => d.id != selectedNmcParameters.id).ToList();
+            SOTR.Calculus.MoistureContentParamList = nmcList;  
+            OnUWAndWcParameterChange(new ChangeEventArgs { Value = ""});
+            msg = $"you removed test parameter at : {selectedDepth}m";
             msgClass = "red";
         }
         else{msg = ""; msgClass = "";}
     }
-    private void OnUWParameterChange(ChangeEventArgs e)
+    private void OnUWAndWcParameterChange(ChangeEventArgs e)
     {
         string id = e.Value?.ToString() ?? "";
         if(id == "")
         {
             selectedUW = ("","",0,0,0,0,0,0,0,0,0,0,0);
-            ClearUWParams();
+            selectedNmcParameters = ("",0,0,0,0,0);
+            ClearUWAndWcParams();
         }
         else
         {
-            selectedUW = SOTR.Calculus.UnitWeightParamList.FirstOrDefault(x => x.id == id);
-            SetUWParameters();
+            selectedUW = SOTR.Calculus.UnitWeightParamList.FirstOrDefault(x => x.id == id);//test this two
+            selectedNmcParameters = SOTR.Calculus.MoistureContentParamList.FirstOrDefault(x => x.id == id);
+            SetUWAndWcParameters();
         }
         msg = "";
     }
-    private void ComputeUW()
+    private void ComputeUWAndWc()
     {
         double wrg; double wrwsg = 0; double wrdsg = 0; double depth;double d; double h;
         if(selectedUW.id == ""){selectedUW.id = Guid.NewGuid().ToString();}
@@ -629,31 +599,43 @@
             double.TryParse(diameterOfRingInMillimeter,out d) && double.TryParse(heightOfRingInMillimeter,out h))
         {
             string id = selectedUW.id;
-            double heightOfRingInCentimeter = h / 10;
-            double diameterOfRingInCentimeter = d / 10;
-            double halfDiameterCm = (diameterOfRingInCentimeter / 2);
-            double volInMillimeter3 = Math.PI * Math.Pow((d/2),2) * h;
-            double volInCentimeter3 = Math.PI * Math.Pow(halfDiameterCm,2) * heightOfRingInCentimeter;
-            double bulkDensityIngramPerCm3 = (wrwsg - wrg) / volInCentimeter3;
-            double dryDensityIngramPerCm3 = (wrdsg - wrg) / volInCentimeter3;
-            double bulkDensityInKNm3 = bulkDensityIngramPerCm3 * 9.81;//g = 9.81
-            double dryDensityInKNm3 = dryDensityIngramPerCm3 * 9.81;
-            double submergedDensityInKNm3 = bulkDensityInKNm3 - 9.81;//density of water
-            //(string id, string containerLabel, double depth, double weightOfRingInGram, double weightOfRingAndWetSampleInGram,double weightOfRingAndDrySampleInGram, double diameterOfRingInMillimeter, double heightOfRingInMillimeter, double volumeofRingInMillimeter, double bulkUnitWeightInKNm3, double dryUnitWeightInKNm3,submergedDensityInKNm3)
-            selectedUW = (id,containerLabel,depth,wrg,wrwsg,wrdsg,d,h,volInMillimeter3,volInCentimeter3,bulkDensityInKNm3,dryDensityInKNm3,submergedDensityInKNm3);
-            var uwList = SOTR.Calculus.UnitWeightParamList.Where(x => x.id != id).ToList() ?? new();;
-            uwList.Add(selectedUW);
-            SOTR.Calculus.UnitWeightParamList = uwList;
-            msg = $"UW for {depth}m added. Click  v to view & edit";
+            ComputeNmc(id,depth,wrg,wrwsg,wrdsg);
+            if(h > 0 && d > 0)
+            {
+                double heightOfRingInCentimeter = h / 10;
+                double diameterOfRingInCentimeter = d / 10;
+                double halfDiameterCm = (diameterOfRingInCentimeter / 2);
+                double volInMillimeter3 = Math.PI * Math.Pow((d/2),2) * h;
+                double volInCentimeter3 = Math.PI * Math.Pow(halfDiameterCm,2) * heightOfRingInCentimeter;
+                double bulkDensityIngramPerCm3 = (wrwsg - wrg) / volInCentimeter3;
+                double dryDensityIngramPerCm3 = (wrdsg - wrg) / volInCentimeter3;
+                double bulkDensityInKNm3 = bulkDensityIngramPerCm3 * 9.81;//g = 9.81
+                double dryDensityInKNm3 = dryDensityIngramPerCm3 * 9.81;
+                double submergedDensityInKNm3 = bulkDensityInKNm3 - 9.81;//density of water
+                //(string id, string containerLabel, double depth, double weightOfRingInGram, double weightOfRingAndWetSampleInGram,double weightOfRingAndDrySampleInGram, double diameterOfRingInMillimeter, double heightOfRingInMillimeter, double volumeofRingInMillimeter, double bulkUnitWeightInKNm3, double dryUnitWeightInKNm3,submergedDensityInKNm3)
+                if(dryDensityInKNm3 < 0){dryDensityInKNm3 = 0;}
+                selectedUW = (id,containerLabel,depth,wrg,wrwsg,wrdsg,d,h,volInMillimeter3,volInCentimeter3,bulkDensityInKNm3,dryDensityInKNm3,submergedDensityInKNm3);
+                var uwList = SOTR.Calculus.UnitWeightParamList.Where(x => x.id != id).ToList() ?? new();;
+                uwList.Add(selectedUW);
+                SOTR.Calculus.UnitWeightParamList = uwList;
+            }
+            else
+            {
+                selectedUW = (id,containerLabel,depth,wrg,wrwsg,wrdsg,d,h,0,0,0,0,0);
+                var uwList = SOTR.Calculus.UnitWeightParamList.Where(x => x.id != id).ToList() ?? new();;
+                uwList.Add(selectedUW);
+                SOTR.Calculus.UnitWeightParamList = uwList;
+            }
+            msg = $"UW/Wc for {depth}m added. Click  v to view & edit";
             msgClass = "green";
         }
         else
         {
-            msg = "Please Ensure all UW parameters are valid numbers only";
+            msg = "Please test parameters are valid numbers only";
             msgClass = "red";
         }
     }
-    private void ClearUWParams()
+    private void ClearUWAndWcParams()
     {
         weightOfRingInGrams = "";
         weightOfRingAndWetSampleInGrams = "";
@@ -664,95 +646,24 @@
         uwDepth = "";
     }
 
-    //NMC Methods
-    private void GetNmcParameters()
+    private void ComputeNmc(string id,double d, double wr, double wrws, double wrds)
     {
-        if(SOTR.Calculus.MoistureContentParamList.Count > 0)
+        if(id != "")
         {
-            selectedNmcParameters = SOTR.Calculus.MoistureContentParamList[0];
-        }
-        else
-        {
-            selectedNmcParameters = new("",0,0,0,0,0);
-        }
-    }
-    private void SetNmcParameters()
-    {
-        weightOfRingNmc = selectedNmcParameters.weightOfRing.ToString();
-        weightOfRingAndWetSampleNmc = selectedNmcParameters.weightOfRingAndWetSample.ToString();
-        weightOfRingAndDrySampleNmc = selectedNmcParameters.weightOfRingAndDrySample.ToString();
-        nmcDepth = selectedNmcParameters.depth.ToString();
-    }
-    private void ComputeNmc()
-    {
-        double wr; double wrws; double wrds;double d;
-        if(selectedNmcParameters.id == ""){selectedNmcParameters.id = Guid.NewGuid().ToString();}
-        if(double.TryParse(weightOfRingAndWetSampleNmc, out wrws) && double.TryParse(weightOfRingNmc, out wr) && double.TryParse(weightOfRingAndDrySampleNmc, out wrds) && double.TryParse(nmcDepth, out d))
-        {
-            string id  = selectedNmcParameters.id;
-            double mc = (wrws - wrds) / (wrds - wr);
-            double mcToPercent = mc * 100;
-            double result = Math.Round(mcToPercent,2);
+            double result = 0;
+            if((wrds - wr) > 0)
+            {
+                double mc = (wrws - wrds) / (wrds - wr);
+                double mcToPercent = mc * 100;
+                result = Math.Round(mcToPercent,2);
+            }
             selectedNmcParameters = (id,d,wr,wrws,wrds,result);
             var nmcParamsList = SOTR.Calculus.MoistureContentParamList.Where(x => x.id != id).ToList() ?? new();
             nmcParamsList.Add(selectedNmcParameters);
             SOTR.Calculus.MoistureContentParamList = nmcParamsList;
-            msg = $"NMC for {d}m added. Click  v to view & edit";
-            msgClass = "green";
-        }
-        else
-        {
-            msg = "Please Ensure all NMC parameters are valid numbers only";
-            msgClass = "red";
         }
     }
-    private void OnNmcParameterChange(ChangeEventArgs e)
-    {
-        string id = e.Value?.ToString() ?? "";
-        if(id == "")
-        {
-            selectedNmcParameters = ("",0,0,0,0,0);
-            ClearNMCParams();
-        }
-        else
-        {
-            selectedNmcParameters = SOTR.Calculus.MoistureContentParamList.FirstOrDefault(x => x.id == id);
-            SetNmcParameters();
-        }
-        msg = "";
-    }
-    private void AddNmc()
-    {
 
-        if(selectedNmcParameters.result == 0)
-        {
-            ComputeNmc();
-        }
-        OnNmcParameterChange(new ChangeEventArgs { Value = ""});
-        msg = "";
-    }
-    private void RemoveMmc()
-    {
-        if( selectedNmcParameters.id != "")
-        {
-            double selectedDepth = selectedNmcParameters.depth;
-            var nmcList = SOTR.Calculus.MoistureContentParamList;
-            nmcList = nmcList.Where(d => d.id != selectedNmcParameters.id).ToList();
-            SOTR.Calculus.MoistureContentParamList = nmcList;
-
-            OnNmcParameterChange(new ChangeEventArgs { Value = ""});
-            msg = $"you removed nmc parameter : {selectedDepth}m";
-            msgClass = "red";
-        }
-        else{msg = ""; msgClass = "";}
-    }
-    private void ClearNMCParams()
-    {
-        weightOfRingNmc = "";
-        weightOfRingAndWetSampleNmc = "";
-        weightOfRingAndDrySampleNmc = "";
-        nmcDepth = "";
-    }
 
     //Log Parameters
     private void AddBoreholeLog()
@@ -894,10 +805,8 @@
         subSampleIdCsv = "";
         /*wet unit weight/ bulk density*/
         selectedUW = ("","",0,0,0,0,0,0,0,0,0,0,0);
-        ClearUWParams();
-        //Nmc
         selectedNmcParameters = ("",0,0,0,0,0);
-        ClearNMCParams();
+        ClearUWAndWcParams();
         //logs
         selectedBoreholeLog = ("","","",0,0);
         ClearBHLogParams();

@@ -169,9 +169,10 @@ public class PlotModelService
         {
             foreach (var uw in sotr.Calculus.UnitWeightParamList)
             {
-                wetSeries.Points.Add(new ScatterPoint(uw.bulkUnitWeightInKNm3,uw.depth));
-                drySeries.Points.Add(new ScatterPoint(uw.dryUnitWeightInKNm3,uw.depth));
-                subSeries.Points.Add(new ScatterPoint(uw.submergedDensityInKNm3,uw.depth));
+                if(uw.bulkUnitWeightInKNm3 > 0){wetSeries.Points.Add(new ScatterPoint(uw.bulkUnitWeightInKNm3,uw.depth));}
+                if(uw.submergedDensityInKNm3 > 0){subSeries.Points.Add(new ScatterPoint(uw.submergedDensityInKNm3,uw.depth));}
+                if(uw.dryUnitWeightInKNm3 > 0){drySeries.Points.Add(new ScatterPoint(uw.dryUnitWeightInKNm3,uw.depth));}
+                
                 if(uw.depth <= yMax && uw.bulkUnitWeightInKNm3 > xMax){xMax = Math.Round(uw.bulkUnitWeightInKNm3,2);}
             }
         }
@@ -201,7 +202,7 @@ public class PlotModelService
         {
             foreach (var wc in sotr.Calculus.MoistureContentParamList)
             {
-                wcSeries.Points.Add(new ScatterPoint(wc.result,wc.depth));
+                if(wc.result > 0){wcSeries.Points.Add(new ScatterPoint(wc.result,wc.depth));}
             }
         }
         plotModel.Series.Add(wcSeries);
