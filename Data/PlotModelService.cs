@@ -173,11 +173,11 @@ public class PlotModelService
                 if(uw.submergedDensityInKNm3 > 0){subSeries.Points.Add(new ScatterPoint(uw.submergedDensityInKNm3,uw.depth));}
                 if(uw.dryUnitWeightInKNm3 > 0){drySeries.Points.Add(new ScatterPoint(uw.dryUnitWeightInKNm3,uw.depth));}
                 
-                if(uw.depth <= yMax && uw.bulkUnitWeightInKNm3 > xMax){xMax = Math.Round(uw.bulkUnitWeightInKNm3,2);}
+                if(uw.depth <= yMax && uw.bulkUnitWeightInKNm3 > xMax){xMax = Math.Round(uw.bulkUnitWeightInKNm3,1);}
             }
         }
-        double majorStep = Math.Round(xMax / 2,1);
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax,MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Unit Weight (kN/m3)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        double majorStep = Math.Round(xMax / 2,1);//Maximum = xMax,
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Unit Weight (kN/m3)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
         plotModel.Axes.Add(new LinearAxis {Minimum = yMin, Maximum = yMax, MinorStep = 0.1, MajorStep = 0.5, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
         //Adding series
         plotModel.Series.Add(wetSeries);
@@ -282,7 +282,7 @@ public class PlotModelService
             LegendPlacement = LegendPlacement.Inside,
             /*LegendBackground = OxyColors.White,*/
             LegendBorder = OxyColors.Black,
-            LegendFontSize = 14,
+            LegendFontSize = 11,
             LegendFontWeight = FontWeights.Bold,
             LegendSymbolLength = 30,
             LegendMargin = 10 
@@ -294,11 +294,14 @@ public class PlotModelService
         ScatterSeries series = new ScatterSeries();
         Dictionary<int,(OxyColor color, MarkerType markerType)> oxyType = new Dictionary<int,(OxyColor color, MarkerType markerType)>()
         {
-            {1, new (OxyColors.Red,MarkerType.Circle)},
-            {2, new (OxyColors.Blue,MarkerType.Square)},
-            {3, new (OxyColors.Green,MarkerType.Diamond)},
+            {1, new (OxyColors.Red,MarkerType.Square)},
+            {2, new (OxyColors.Blue,MarkerType.Circle)},
+            {3, new (OxyColors.DarkGreen,MarkerType.Diamond)},
             {4, new (OxyColors.Yellow,MarkerType.Circle)},
-            {5, new (OxyColors.Red,MarkerType.Square)},
+            {5, new (OxyColors.Green,MarkerType.Square)},
+            {6, new (OxyColors.Yellow,MarkerType.Square)},
+            {7, new (OxyColors.Blue,MarkerType.Diamond)},
+            {8, new (OxyColors.BlueViolet,MarkerType.Diamond)},
         };
         if(oxyType.ContainsKey(index))
         {
@@ -313,14 +316,14 @@ public class PlotModelService
         }
         return series;
     }
-    public PlotModel PlotSuParameters(Dictionary<string,List<double>> SuParameters, double yMin, double yMax)
+    public PlotModel PlotSuParameters(string xTitle,Dictionary<string,List<double>> SuParameters, double yMin, double yMax)
     {
         var plotModel = new PlotModel() { };//get the x min and maximum with AI
         var xMax = SuParameters.Values.Max(v => v.Max());
         var xMin = SuParameters.Values.Min(v => v.Min());
         //Console.WriteLine($"from su plot {xMin} - {xMax}");//Minimum = xMin, Maximum = xMax,
         double majorStep = Math.Round(xMax / 2,2); 
-        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title="Shear Strength (Su),kPa", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
+        plotModel.Axes.Add(new LinearAxis {Minimum = 0, Maximum = xMax, MajorStep = majorStep, Position = AxisPosition.Top,StartPosition = 0,EndPosition = 1,IsZoomEnabled = false, IsPanEnabled = false, Title=xTitle, MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 5,FontSize = 13});
         plotModel.Axes.Add(new LinearAxis {Minimum = yMin,Maximum = yMax, MajorStep = 0.5, MinorStep = 0.1, Position = AxisPosition.Left,StartPosition = 1,EndPosition = 0,IsZoomEnabled = false, IsPanEnabled = false, Title="Penetration (m)", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot,TitleFontWeight = FontWeights.Bold,AxisTitleDistance = 10,FontSize = 13});
 
         int index = 0;

@@ -72,7 +72,18 @@
         }
         <BlazorPlotView Model="@wcModel" Width="195" Height="550" />@*160*@
         <BlazorPlotView Model="@uwModel" Width="195" Height="550" />
-        <BlazorPlotView Model="@suModel" Width="195" Height="550" />
+        @if(AllSuParametersDict.ContainsKey("SuParameters"))
+        {
+            <BlazorPlotView Model="@suModel" Width="195" Height="550" />
+        }
+        @if(AllSuParametersDict.ContainsKey("Minivane"))
+        {
+            <BlazorPlotView Model="@mvModel" Width="195" Height="550" />
+        }
+        @if(AllSuParametersDict.ContainsKey("UU Triaxial"))
+        {
+            <BlazorPlotView Model="@uuModel" Width="195" Height="550" />
+        }
     </div>
 
     <div class="borehole-footer">
@@ -85,12 +96,12 @@
             <b>Sample</b>
         </div>
         <div class="flex-col">
-            <span class="rect yellow-back"></span>
-            <b>N/R</b>
-        </div>
-        <div class="flex-col">
             <span class="rect black-back"></span>
             <b>Sub-Samples</b>
+        </div>
+        <div class="flex-col">
+            <span class="rect yellow-back"></span>
+            <b>N/R</b>
         </div>
         <div class="flex-col">
             <span class="arrow-down">&#x2193;</span>
@@ -112,20 +123,16 @@
             <b>No Recovery</b>
         </div>
         <div class="flex-col">
-            <span>UU</span>
-            <b>UU Triaxial</b>
-        </div>
-        <div class="flex-col">
             <span>PP</span>
             <b>Pocket Penetrometer</b>
         </div>
         <div class="flex-col">
-            <span>MV</span>
-            <b>Miniature Vane</b>
-        </div>
-        <div class="flex-col">
             <span>TV</span>
             <b>Torvane</b>
+        </div>
+        <div class="flex-col">
+            <span>su (kPa)</span>
+            <b>Undrained Shear Strength</b>
         </div>
 
     </div>
@@ -140,7 +147,9 @@
     PlotModel fsModel = new PlotModel();
     PlotModel uwModel = new PlotModel();
     PlotModel wcModel = new PlotModel();
+    PlotModel mvModel = new PlotModel();
     PlotModel suModel = new PlotModel();
+    PlotModel uuModel = new PlotModel();
     int chartDocumentCount = 0;
     int count = 0;
     string msg = "";
@@ -151,7 +160,8 @@
     double yAxisMin = 0;
     double yAxisMax = 0;
     List<SampleInfo> allSOTR = new List<SampleInfo>();
-    Dictionary<string,List<double>> SuParameters = new Dictionary<string,List<double>>();
+    List<string> SuTableNameList = new List<string>(){"SuParameters","Minivane","UU Triaxial"};
+    Dictionary<string,Dictionary<string,List<double>>> AllSuParametersDict = new Dictionary<string,Dictionary<string,List<double>>>();
     Dictionary<string,string> samplingToolDict = new();
     protected override void OnInitialized()
     {
@@ -179,11 +189,15 @@
                 }
             }
             //us id to read su
-            string id = state.Project.Value.Id;
-            var su = database.Read("SuParameters",id);
-            if(su.Key != "" && su.Value != "")
+            foreach(var tableName in SuTableNameList)
             {
-                SuParameters = JsonConvert.DeserializeObject<Dictionary<string,List<double>>>(su.Value) ?? new();
+                string id = state.Project.Value.Id;
+                var su = database.Read(tableName,id);//("SuParameters",id);
+                if(su.Key != "" && su.Value != "")
+                {
+                    var suParameterDict = JsonConvert.DeserializeObject<Dictionary<string,List<double>>>(su.Value) ?? new();
+                    AllSuParametersDict[tableName] = suParameterDict;
+                }
             }
         }
     }
@@ -291,9 +305,31 @@
         poreModel = PlotPorePressureModel();
         uwModel = PlotModelService.PlotUnitWeight(allSOTR,yAxisMin,yAxisMax);
         wcModel = PlotModelService.PlotWaterContent(allSOTR,yAxisMin,yAxisMax);
-        if(SuParameters.Count() > 0)
+        if(AllSuParametersDict.Count() > 0)
         {
-            suModel = PlotModelService.PlotSuParameters(SuParameters,yAxisMin,yAxisMax);
+            foreach(var dict in AllSuParametersDict)
+            {
+                var tableName = dict.Key;
+                var suParameters =dict.Value;
+                string title = "";
+                switch(tableName)
+                {
+                    case "SuParameters"://reps Torvane and PP
+                         title = "Torvane/PP,su(kpa)";
+                        suModel = PlotModelService.PlotSuParameters(title,suParameters,yAxisMin,yAxisMax);
+                    break;
+                    case "Minivane":
+                         title = "Minivane, su(kpa)";
+                        mvModel = PlotModelService.PlotSuParameters(title,suParameters,yAxisMin,yAxisMax);
+                    break;
+                    case "UU Triaxial":
+                         title = "UU Triaxial, su(kpa)";
+                        uuModel = PlotModelService.PlotSuParameters(title,suParameters,yAxisMin,yAxisMax);
+                    break;
+                    default:
+                    break;
+                }
+            }
         }
     }
     private void TogglePlotModelForward()

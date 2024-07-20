@@ -29,16 +29,11 @@
                     <option value="">Compute sample parameter</option>
                     <option value="log">Add Boring Log</option>
                     <option value="uw&wc">Unit Weight & Water Content</option>
-                    <option value="su">su Test (mv,pp,tv,uu,uuR)</option>
+                    <option value="mv">Miniature Vane</option>
+                    <option value="su">Torvane & Pocket Pen</option>
+                    <option value="uu">UU Triaxial</option>
                 </select>
             </div>
-            @*<div class="input-group">
-                <select @bind="containsCarbonate">
-                    <option value="">Sample contains carbonate?</option>
-                    <option value="true">True</option>
-                    <option value="false">False</option>
-                </select>
-            </div>*@
         }
         <div class="input-group">
             <select @bind="samplingTool">
@@ -237,7 +232,7 @@
                 </div>
             }
         }
-        else if(selectCalc == "su")
+        else if(selectCalc == "mv" || selectCalc == "su" || selectCalc == "uu")
         {
             <span class="@msgClass">@msg</span>
             <div class="input-group">
@@ -250,7 +245,7 @@
             </div> 
         }
         <span class="@msgClass">@calcMsg</span>
-        @if(selectCalc != "su")
+        @if(selectCalc != "mv" && selectCalc != "su" && selectCalc != "uu")
         {
             <button @onclick="SubmitCalculus" class="btn">Compute</button>
         }
@@ -392,10 +387,6 @@
         if(selectCalc == "uw&wc")
         {
             ComputeUWAndWc();
-        }
-        else if(selectCalc == "nmc")
-        {
-           // ComputeNmc();
         }
         else if(selectCalc == "torvane")
         {
@@ -753,6 +744,22 @@
     }
     private async Task ReadExcelData(IBrowserFile file)
     {
+        string SuTableName = "";
+        switch(selectCalc)
+        {
+            case "su": //use this to store Torvane and pocket Penetrometer
+                SuTableName = "SuParameters";
+            break;
+            case "mv":
+                SuTableName = "Minivane";
+            break;
+            case "uu":
+                SuTableName = "UU Triaxial";
+            break;
+            default:
+                SuTableName = "";
+            break;
+        }
         try
         {
             using (var memoryStream = new MemoryStream())
@@ -760,13 +767,13 @@
                 await file.OpenReadStream().CopyToAsync(memoryStream);
                 memoryStream.Position = 0; //Dictionary<string, List<double>> ReadExcelDataAsColumns(Stream fileStream, string fileName)
                 var excelDataColumnDict = NPOIExcelReader.ReadExcelDataAsColumns(memoryStream, file.Name,0);
-                if(excelDataColumnDict.Count() > 0 && SOTR.ProjectId != "")
+                if(excelDataColumnDict.Count() > 0 && SOTR.ProjectId != "" && SuTableName != "")
                 {
                     var SuParameters = excelDataColumnDict;
                     //Add to db as an independent data with project Id as it's common key
                     string key = JsonConvert.SerializeObject(SOTR.ProjectId);
                     string value = JsonConvert.SerializeObject(SuParameters);
-                    database.Create("SuParameters",key,value);
+                    database.Create(SuTableName,key,value);
                     msg = "data uploaded successfully";
                     msgClass = "green";
                 }
