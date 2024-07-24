@@ -14,7 +14,7 @@
     </div>
 </div>
 <div class="flex-col" id="pdf-view">
-
+    @*borehole img is injected into here via js*@
 </div>
 
 @code {
@@ -30,7 +30,7 @@
     {
         if(state.Project.Value.Id != "")
         {
-            string filename = $"{state.Project.Value.Info.TestNumber}_{Guid.NewGuid().ToString()}";
+            string filename = $"{state.Project.Value.Info.TestNumber}_{DateTime.Now.ToString("ddMMYYYY")}_{Guid.NewGuid().ToString()}";
             await jSRuntime.InvokeAsync<string>("blazorExtensions.captureAndConvertToPDF",filename);
         }
     }

@@ -20,6 +20,7 @@ class Functions : IFunctions
             {"Push Sampler", "PS"},
             {"Piston Sampler", "P"},
             {"Hammer Sampler", "SH"},
+            {"Split Spoon", "SS"},
            // {"No Recovery", "N/R"}
         };
         return samplingTool;
