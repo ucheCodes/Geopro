@@ -131,7 +131,7 @@ public class CustomRectangleAnnotation : RectangleAnnotation
         var textPosition = Transform(new DataPoint(midX, midY));
 
         var fontSize = 25;//this.FontSize > 0 ? this.FontSize : 16;
-        OxyColor TextColor = OxyColors.Red;
+        OxyColor TextColor = OxyColors.DarkGray;
         rc.DrawText(textPosition, text, TextColor, "", fontSize, 800, rotationAngle, HorizontalAlignment.Center, VerticalAlignment.Middle);
     }
 

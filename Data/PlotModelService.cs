@@ -21,9 +21,9 @@ public class PlotModelService
     {
         Dictionary<string,(HatchStyle hatchStyle, OxyColor color,string strata)> legend = new Dictionary<string, (HatchStyle hatchStyle, OxyColor color, string strata)>()
         {
-            {"N/R", new (HatchStyle.Horizontal,OxyColors.Yellow,"N/R")},//no recovery
-            {"sand", new (HatchStyle.Dots,OxyColors.Transparent,"Sand")},
-            {"clay", new (HatchStyle.Dashes,OxyColors.Transparent,"Clay")},
+            {"N/R", new (HatchStyle.Horizontal,OxyColors.Brown,"N/R")},//no recovery
+            {"sand", new (HatchStyle.Dots,OxyColors.Yellow,"Sand")},
+            {"clay", new (HatchStyle.Dashes,OxyColors.Green,"Clay")},
             {"clayey sand", new (HatchStyle.Dots,OxyColors.RoyalBlue,"Clayey Sand")},
             {"sandy clay", new (HatchStyle.SquareX,OxyColors.DarkGreen,"Sandy Clay")},
             {"silt", new (HatchStyle.Mixed,OxyColors.Tan,"Silt")},
